@@ -1,12 +1,10 @@
 {
   "name": "Lito Barber Studio",
   "short_name": "Lito Barber",
-  "description": "Control de Citas & Clientes para Lito Barber Studio",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "orientation": "portrait",
+  "background_color": "#111827",
+  "theme_color": "#111827",
   "icons": [
     {
       "src": "icon-192.png",
