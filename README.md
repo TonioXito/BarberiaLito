@@ -1,2 +1,0 @@
-# BarberiaLito
-Control de citas
