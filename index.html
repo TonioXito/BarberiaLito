@@ -74,7 +74,7 @@
 
         input, select {
             width: 100%; padding: 13px 12px; border: 1px solid var(--border); background: #0f172a;
-            color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; /* evita zoom automático en iOS */
+            color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px;
             touch-action: manipulation;
         }
         input:focus, select:focus { border-color: var(--accent); outline: none; }
@@ -387,11 +387,7 @@
 </div>
 
 <script>
-    /* =====================================================================
-       CAPA DE BASE DE DATOS (IndexedDB)
-       Reemplaza a localStorage: soporta muchos más datos (fotos incluidas),
-       funciona offline en el teléfono y es más robusta para uso diario.
-    ===================================================================== */
+    /* CAPA DE BASE DE DATOS (IndexedDB) */
     const DB_NAME = 'BarberiaLitoDB';
     const DB_VERSION = 1;
     const STORE_REGISTROS = 'registros';
@@ -484,9 +480,7 @@
         }
     }
 
-    /* =====================================================================
-       ESTADO DE LA APLICACIÓN (en memoria, sincronizado con IndexedDB)
-    ===================================================================== */
+    /* ESTADO DE LA APLICACIÓN */
     let registros = [];
     let clientesBD = [];
 
@@ -508,7 +502,6 @@
         document.getElementById('horaSeleccionada').value = `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
     }
 
-    /* OBTENER ARRAY DE FOTOS DEL CLIENTE */
     function obtenerFotosCliente(clienteNombre) {
         if (!clienteNombre) return [];
         const cli = clientesBD.find(c => c && c.nombre && c.nombre.toLowerCase() === clienteNombre.toLowerCase());
@@ -523,7 +516,6 @@
         return fotosArr;
     }
 
-    /* VISOR GALERÍA MULTIFOTOS */
     function abrirGaleriaCliente(nombreCliente) {
         clienteNombreGaleriaActual = nombreCliente;
         const fotos = obtenerFotosCliente(nombreCliente);
@@ -573,7 +565,6 @@
         document.getElementById('modalGaleriaFotos').style.display = 'none';
     }
 
-    /* DESCARGAR BASE DE DATOS JSON */
     function descargarBaseDeDatosJSON() {
         if (registros.length === 0 && clientesBD.length === 0) {
             alert('Aún no hay datos para descargar.');
@@ -601,7 +592,6 @@
         URL.revokeObjectURL(url);
     }
 
-    /* RESTAURAR BASE DE DATOS DESDE UN ARCHIVO JSON DE RESPALDO */
     function restaurarBaseDeDatosJSON(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -636,7 +626,6 @@
         reader.readAsText(file);
     }
 
-    /* CAPTURA Y ASIGNACIÓN DE FOTO A LA GALERÍA DEL CLIENTE */
     function capturarFotoCorte(idRegistro) {
         idRegistroFotoActual = idRegistro;
         document.getElementById('inputFotoPostServicio').click();
@@ -699,7 +688,6 @@
         reader.readAsDataURL(file);
     }
 
-    /* MODAL AGENDA */
     function abrirModalAgenda() {
         document.getElementById('modalAgenda').style.display = 'flex';
         document.getElementById('buscarClienteModal').value = '';
@@ -944,7 +932,6 @@
         }
     }
 
-    /* ENVIAR WHATSAPP DE FORMA SEGURA Y CORREGIDA */
     const CODIGO_PAIS_DEFECTO = '58';
 
     function normalizarTelefono(telefono) {
@@ -963,7 +950,7 @@
         const telNormalizado = normalizarTelefono(telefono);
 
         if (telefono && telNormalizado.length < 11) {
-            if (!confirm('⚠️ El número de teléfono parece incompleto o con un formato raro, así que WhatsApp podría no abrir el chat correcto.\n\n¿Deseas intentarlo de todas formas?')) {
+            if (!confirm('⚠️ El número de teléfono parece incompleto, por lo que WhatsApp podría no abrir el chat correcto.\n\n¿Deseas intentarlo de todas formas?')) {
                 return;
             }
         }
@@ -977,10 +964,6 @@
         if (!nuevaVentana || nuevaVentana.closed || typeof nuevaVentana.closed === 'undefined') {
             window.location.href = url;
         }
-
-        if (!telefono) {
-            console.info('Se abrió WhatsApp sin un número específico: deberás elegir el contacto manualmente.');
-        }
     }
 
     function enviarSeguimientoWhatsApp(nombreCliente, telefonoCliente, diasSinVenir) {
@@ -992,7 +975,6 @@
         abrirWhatsAppMensaje(telefonoCliente, texto);
     }
 
-    // Datos de Pago Móvil de la barbería.
     const DATOS_PAGO_MOVIL = {
         cedula: '29.727.652',
         banco: 'B.N.C. (0191)',
@@ -1381,15 +1363,6 @@
                 </div>
             `;
             lista.appendChild(card);
-        });
-    }
-
-    // REGISTRO DEL SERVICE WORKER PARA HABILITAR PWA Y USO OFFLINE
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker registrado con éxito', reg))
-                .catch(err => console.log('Error al registrar Service Worker', err));
         });
     }
 
