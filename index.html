@@ -5,25 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lito Barber Studio - Control de Citas & Clientes</title>
 
-    <!-- CONFIGURACIÓN PWA DIRECTA CON MANIFEST EN LÍNEA -->
-    <link rel="manifest" href='data:application/manifest+json,{
-        "name": "Lito Barber Studio",
-        "short_name": "Lito Barber",
-        "start_url": "./index.html",
-        "display": "standalone",
-        "background_color": "#0f172a",
-        "theme_color": "#0f172a",
-        "icons": [
-            {
-                "src": "logo.jpg",
-                "sizes": "192x192 512x512",
-                "type": "image/jpeg"
-            }
-        ]
-    }'>
+    <!-- CONFIGURACIÓN PWA -->
+    <link rel="manifest" href="manifest.json">
 
-    <link rel="apple-touch-icon" href="logo.jpg">
-    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
     
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
@@ -44,7 +30,7 @@
             --border: #334155;
             --whatsapp: #25d366;
         }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--text); }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-bottom: 80px; color: var(--text); }
         .container { max-width: 600px; margin: 0 auto; }
         
         .header-container { text-align: center; margin-bottom: 25px; }
@@ -156,6 +142,27 @@
         .tag-alerta-seguimiento { background: #7f1d1d; color: #fca5a5; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.75rem; }
         .tag-ok-seguimiento { background: #14532d; color: #86efac; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.75rem; }
 
+        /* PANELES DE SEGUIMIENTO Y RANKING */
+        .panel-seguimiento { background: #271719; border: 1px solid #7f1d1d; border-radius: 8px; padding: 12px; }
+        .panel-seguimiento.panel-ok { background: #10241a; border-color: #14532d; color: var(--text-muted); font-size: 0.85rem; text-align: center; }
+        .panel-titulo { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; }
+        .seg-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(127,29,29,0.35); font-size: 0.82rem; flex-wrap: wrap; }
+        .ranking-item { display: flex; align-items: center; gap: 10px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 8px; font-size: 0.9rem; }
+        .ranking-item.pos-1 { border-color: var(--warning); }
+        .ranking-pos { font-size: 1.15rem; }
+        .ranking-cant { margin-left: auto; background: var(--accent); color: white; font-weight: bold; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; white-space: nowrap; }
+        .bloque-ranking { margin-top: 14px; }
+
+        /* PANEL DE DETALLE DEL DÍA EN CALENDARIO */
+        .panel-dia { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px; }
+        .panel-subtitulo { display: block; font-weight: bold; font-size: 0.75rem; color: var(--text-muted); margin: 10px 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel-vacio { color: var(--text-muted); font-size: 0.85rem; text-align: center; margin: 6px 0; }
+        .panel-hint { color: var(--text-muted); font-size: 0.72rem; text-align: center; margin: 10px 0 0; opacity: 0.8; }
+        .dia-item { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-top: 1px solid var(--border); font-size: 0.85rem; flex-wrap: wrap; }
+        .dia-hora { background: #1e293b; padding: 2px 7px; border-radius: 6px; font-weight: bold; font-size: 0.72rem; color: #93c5fd; white-space: nowrap; }
+        .dia-monto { margin-left: auto; font-weight: bold; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
+        .btn-dia-toggle { padding: 5px 10px; font-size: 0.7rem; }
+
         /* MODALES */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:999; padding: 15px; box-sizing: border-box; }
         .modal-card { background: var(--card); border: 1px solid var(--border); width: 100%; max-width: 480px; border-radius: 12px; padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-height: 85vh; display: flex; flex-direction: column; }
@@ -172,6 +179,18 @@
         .galeria-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
         .galeria-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
         .galeria-item .btn-del-foto { position: absolute; top: 2px; right: 2px; background: rgba(220,38,38,0.85); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+        /* NAVEGACIÓN POR SECCIONES */
+        .vista { display: none; }
+        .vista.active { display: block; animation: aparecerVista 0.18s ease-out; }
+        @keyframes aparecerVista { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        .nav-tabs { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; display: flex; background: var(--card); border-top: 1px solid var(--border); z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 12px rgba(0,0,0,0.35); }
+        .nav-tab { flex: 1; background: none; border: none; border-radius: 0; color: var(--text-muted); font-size: 0.62rem; font-weight: bold; letter-spacing: 0.3px; padding: 8px 2px 9px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; transition: color 0.15s; }
+        .nav-tab .icono-tab { font-size: 1.3rem; line-height: 1; }
+        .nav-tab.active { color: var(--accent); }
+        .nav-tab:hover { color: var(--text); }
+        .nav-tab.active:hover { color: var(--accent); }
     </style>
 </head>
 <body>
@@ -185,7 +204,7 @@
     <!-- LOGO Y TITULO -->
     <div class="header-container">
         <div class="logo-box">
-            <img src="logo.jpg" alt="Lito Barber Studio" style="max-width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; document.getElementById('logoSvgFallback').style.display='block';">
+            <img src="logo.png" alt="Lito Barber Studio" style="max-width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; document.getElementById('logoSvgFallback').style.display='block';">
             <svg id="logoSvgFallback" viewBox="0 0 300 120" style="display:none; width:100%; height:auto; background:black; border-radius:8px; padding:10px;">
                 <text x="15" y="80" font-family="'Brush Script MT', cursive, sans-serif" font-size="75" font-weight="bold" fill="white" font-style="italic">lito</text>
                 <text x="175" y="52" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="bold" fill="white" letter-spacing="2">BARBER</text>
@@ -195,6 +214,8 @@
         <p>Gestión de Citas y Clientes</p>
     </div>
 
+    <!-- SECCIÓN: NUEVA CITA -->
+    <section class="vista active" id="vista-nueva">
     <!-- FORMULARIO DE REGISTRO DE CITA -->
     <div class="card">
         <h2>
@@ -259,7 +280,10 @@
             <button class="btn-walkin" onclick="registrarCita('Sin Agenda')">⚡ Llegó Sin Cita</button>
         </div>
     </div>
+    </section>
 
+    <!-- SECCIÓN: CALENDARIO -->
+    <section class="vista" id="vista-calendario">
     <!-- CALENDARIO CON SELECTOR DE VISTA -->
     <div class="card">
         <div class="cal-header">
@@ -285,8 +309,12 @@
             <div class="cal-day-name">Sáb</div>
         </div>
         <div class="cal-grid" id="calDias"></div>
+        <div id="panelDiaCalendario"></div>
     </div>
+    </section>
 
+    <!-- SECCIÓN: ATENCIONES (LISTA + RESUMEN) -->
+    <section class="vista" id="vista-atenciones">
     <!-- LISTADO DE ATENCIONES Y FILTROS -->
     <div class="card">
         <h2>
@@ -318,6 +346,15 @@
             <div class="stat-box"><span id="totalRecaudado">$0.00</span><label>Total Recaudado</label></div>
         </div>
     </div>
+    </section>
+
+    <!-- SECCIÓN: CLIENTES -->
+    <section class="vista" id="vista-clientes">
+    <!-- ALERTAS DE SEGUIMIENTO Y RANKING DE FRECUENCIA -->
+    <div class="card">
+        <div id="panelSeguimientos"></div>
+        <div id="panelTopClientes" class="bloque-ranking"></div>
+    </div>
 
     <!-- DIRECTORIO DE CLIENTES & RESPALDO DE BASE DE DATOS -->
     <div class="card">
@@ -332,7 +369,16 @@
         </h2>
         <div id="listaClientesDirectorio"></div>
     </div>
+    </section>
 </div>
+
+<!-- BARRA DE NAVEGACIÓN INFERIOR -->
+<nav class="nav-tabs" aria-label="Secciones de la aplicación">
+    <button type="button" class="nav-tab active" data-vista="vista-nueva" onclick="mostrarVista('vista-nueva')"><span class="icono-tab">📅</span>NUEVA CITA</button>
+    <button type="button" class="nav-tab" data-vista="vista-calendario" onclick="mostrarVista('vista-calendario')"><span class="icono-tab">📆</span>CALENDARIO</button>
+    <button type="button" class="nav-tab" data-vista="vista-atenciones" onclick="mostrarVista('vista-atenciones')"><span class="icono-tab">📋</span>ATENCIONES</button>
+    <button type="button" class="nav-tab" data-vista="vista-clientes" onclick="mostrarVista('vista-clientes')"><span class="icono-tab">👥</span>CLIENTES</button>
+</nav>
 
 <!-- MODAL BÚSQUEDA RÁPIDA DE AGENDA -->
 <div class="modal-overlay" id="modalAgenda">
@@ -378,6 +424,18 @@
 
     const avatarDefaultSVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
 
+    const escHtml = (valor) => String(valor ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pad2 = (n) => String(n).padStart(2, '0');
+
+    function aFechaLocalISO(fecha) {
+        return `${fecha.getFullYear()}-${pad2(fecha.getMonth() + 1)}-${pad2(fecha.getDate())}`;
+    }
+
+    let _generadorId = Date.now();
+    function generarId() {
+        return ++_generadorId;
+    }
+
     function inicializarFechaHora() {
         const ahora = new Date();
         const pad = (n) => String(n).padStart(2, '0');
@@ -395,14 +453,26 @@
                     }
                 });
             }
-            window.location.reload(true);
+            window.location.reload();
         }
     }
 
     function guardar() {
-        localStorage.setItem('barberia_registros_v4', JSON.stringify(registros));
-        localStorage.setItem('barberia_clientes_v4', JSON.stringify(clientesBD));
+        try {
+            localStorage.setItem('barberia_registros_v4', JSON.stringify(registros));
+            localStorage.setItem('barberia_clientes_v4', JSON.stringify(clientesBD));
+        } catch (e) {
+            alert('⚠️ El almacenamiento del navegador está lleno. Descarga una copia de seguridad y elimina fotos antiguas para poder seguir guardando cambios.');
+        }
         render();
+    }
+
+    function mostrarVista(idVista) {
+        const vista = document.getElementById(idVista) || document.getElementById('vista-nueva');
+        document.querySelectorAll('.vista').forEach(seccion => seccion.classList.toggle('active', seccion === vista));
+        document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.vista === vista.id));
+        localStorage.setItem('barberia_vista_activa', vista.id);
+        window.scrollTo(0, 0);
     }
 
     /* MODIFICAR COSTO DEL SERVICIO POSTERIORMENTE */
@@ -522,10 +592,19 @@
             fotos.forEach((fotoUrl, index) => {
                 const item = document.createElement('div');
                 item.className = 'galeria-item';
-                item.innerHTML = `
-                    <img src="${fotoUrl}" onclick="ampliarFotoGaleria('${fotoUrl}')">
-                    <button class="btn-del-foto" onclick="eliminarFotoGaleria(${index})">✕</button>
-                `;
+
+                const img = document.createElement('img');
+                img.src = fotoUrl;
+                img.alt = `Foto ${index + 1}`;
+                img.onclick = () => ampliarFotoGaleria(fotoUrl);
+
+                const btnDel = document.createElement('button');
+                btnDel.className = 'btn-del-foto';
+                btnDel.textContent = '✕';
+                btnDel.onclick = (e) => { e.stopPropagation(); eliminarFotoGaleria(index); };
+
+                item.appendChild(img);
+                item.appendChild(btnDel);
                 grid.appendChild(item);
             });
         }
@@ -574,7 +653,7 @@
         const blob = new Blob([jsonStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
 
-        const fechaHoy = new Date().toISOString().split('T')[0];
+        const fechaHoy = aFechaLocalISO(new Date());
         const a = document.createElement('a');
         a.href = url;
         a.download = `Barberia_Lito_Backup_${fechaHoy}.json`;
@@ -653,18 +732,18 @@
 
                 const fotoBase64 = canvas.toDataURL('image/jpeg', 0.80);
 
-                const regIndex = registros.findIndex(r => r.id === idRegistroFotoActual);
+                const regIndex = registros.findIndex(r => r && r.id === idRegistroFotoActual);
                 if (regIndex >= 0) {
-                    registros[regIndex].foto = fotoBase64;
-                    
                     const nombreCli = registros[regIndex].nombre;
                     const cliIndex = clientesBD.findIndex(c => c && c.nombre && c.nombre.toLowerCase() === nombreCli.toLowerCase());
-                    
+
                     if (cliIndex >= 0) {
                         let fotosExistentes = obtenerFotosCliente(nombreCli);
                         fotosExistentes.unshift(fotoBase64);
                         clientesBD[cliIndex].fotos = fotosExistentes;
                         clientesBD[cliIndex].foto = fotoBase64;
+                    } else {
+                        registros[regIndex].foto = fotoBase64;
                     }
                 }
 
@@ -713,14 +792,18 @@
 
             item.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="${fotoCliente}" class="avatar-cliente" style="width:40px; height:40px;" onclick="event.stopPropagation(); abrirGaleriaCliente('${c.nombre}')">
+                    <img src="${fotoCliente}" class="avatar-cliente" style="width:40px; height:40px;" alt="${escHtml(c.nombre)}">
                     <div>
-                        <strong>${c.nombre}</strong><br>
-                        <small style="color: var(--text-muted);">${c.telefono || 'Sin teléfono'}</small>
+                        <strong>${escHtml(c.nombre)}</strong><br>
+                        <small style="color: var(--text-muted);">${escHtml(c.telefono || 'Sin teléfono')}</small>
                     </div>
                 </div>
                 <span style="color: var(--accent); font-weight: bold; font-size: 0.8rem;">Seleccionar ➔</span>
             `;
+            item.querySelector('.avatar-cliente').onclick = (e) => {
+                e.stopPropagation();
+                abrirGaleriaCliente(c.nombre);
+            };
             item.onclick = () => seleccionarClienteDesdeModal(c);
             contenedor.appendChild(item);
         });
@@ -835,10 +918,10 @@
             const fotosArr = obtenerFotosCliente(nombre);
             fotoExistente = fotosArr.length > 0 ? fotosArr[0] : '';
         } else {
-            clientesBD.push({ 
-                id: Date.now(), 
-                nombre: nombre, 
-                telefono: telefono, 
+            clientesBD.push({
+                id: generarId(),
+                nombre: nombre,
+                telefono: telefono,
                 frecuenciaDias: frecuenciaDias,
                 fotos: []
             });
@@ -850,7 +933,7 @@
         }
 
         const nuevoRegistro = {
-            id: Date.now(),
+            id: generarId(),
             nombre: nombre,
             telefono: telefono,
             foto: fotoExistente,
@@ -872,6 +955,7 @@
         inicializarFechaHora();
         seleccionarEstadoPagoFormulario('Pendiente');
         seleccionarFrecuenciaFormulario(14);
+        mostrarVista(tipo === 'Sin Agenda' ? 'vista-atenciones' : 'vista-calendario');
     }
 
     function cambiarEstadoPagoModal(id) {
@@ -969,8 +1053,8 @@
     }
 
     function exportarResumenWhatsApp() {
-        let registrosFiltrados = fechaFiltroSeleccionada 
-            ? registros.filter(r => r && r.fechaISO && new Date(r.fechaISO).toISOString().split('T')[0] === fechaFiltroSeleccionada)
+        let registrosFiltrados = fechaFiltroSeleccionada
+            ? registros.filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaFiltroSeleccionada)
             : registros;
 
         let totalRecaudado = 0;
@@ -1001,32 +1085,41 @@
             return;
         }
 
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ID,Nombre,Telefono,Frecuencia_Habitual_Dias,Ultima_Visita,Dias_Sin_Venir\n";
+        const escaparCSV = (valor) => `"${String(valor ?? '').replace(/"/g, '""')}"`;
+        const filas = ["ID,Nombre,Telefono,Frecuencia_Habitual_Dias,Ultima_Visita,Dias_Sin_Venir"];
 
         clientesBD.forEach(c => {
-            const ultReg = registros.filter(r => r && r.nombre && r.nombre.toLowerCase() === c.nombre.toLowerCase() && r.atendido)
-                                    .sort((a,b) => new Date(b.fechaISO) - new Date(a.fechaISO))[0];
-            
-            let ultimaFecha = ultReg ? new Date(ultReg.fechaISO).toLocaleDateString() : 'Sin registros atendidos';
-            let diasSinVenir = ultReg ? Math.floor((new Date() - new Date(ultReg.fechaISO)) / (1000 * 60 * 60 * 24)) : 'N/A';
+            const clave = c.nombre.toLowerCase();
+            let ultimaVisita = null;
+            registros.forEach(r => {
+                if (!r || !r.nombre || !r.atendido || !r.fechaISO) return;
+                if (r.nombre.toLowerCase() !== clave) return;
+                const fecha = new Date(r.fechaISO);
+                if (!ultimaVisita || fecha > ultimaVisita) ultimaVisita = fecha;
+            });
 
-            let linea = `"${c.id}","${c.nombre}","${c.telefono || ''}","${c.frecuenciaDias || 14}","${ultimaFecha}","${diasSinVenir}"`;
-            csvContent += linea + "\n";
+            let ultimaFecha = ultimaVisita ? ultimaVisita.toLocaleDateString() : 'Sin registros atendidos';
+            let diasSinVenir = ultimaVisita ? Math.floor((new Date() - ultimaVisita) / (1000 * 60 * 60 * 24)) : 'N/A';
+
+            filas.push([c.id, c.nombre, c.telefono || '', c.frecuenciaDias || 14, ultimaFecha, diasSinVenir].map(escaparCSV).join(','));
         });
 
-        const encodedUri = encodeURI(csvContent);
+        const blob = new Blob(["\uFEFF" + filas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Clientes_LitoBarberStudio_${new Date().toISOString().split('T')[0]}.csv`);
+        link.href = url;
+        link.download = `Clientes_LitoBarberStudio_${aFechaLocalISO(new Date())}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function seleccionarFechaFiltro(isoFecha) {
-        fechaFiltroSeleccionada = isoFecha;
-        document.getElementById('fechaSeleccionada').value = isoFecha;
+        fechaFiltroSeleccionada = (fechaFiltroSeleccionada === isoFecha) ? null : isoFecha;
+        if (fechaFiltroSeleccionada) {
+            document.getElementById('fechaSeleccionada').value = isoFecha;
+        }
         render();
     }
 
@@ -1056,7 +1149,7 @@
             for (let i = 0; i < 7; i++) {
                 const diaActual = new Date(inicioSemana);
                 diaActual.setDate(inicioSemana.getDate() + i);
-                const fechaStrISO = diaActual.toISOString().split('T')[0];
+                const fechaStrISO = aFechaLocalISO(diaActual);
 
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'cal-day';
@@ -1066,7 +1159,7 @@
                 dayDiv.innerText = diaActual.getDate();
                 dayDiv.onclick = () => seleccionarFechaFiltro(fechaStrISO);
 
-                const registrosDia = registros.filter(r => r && r.fechaISO && new Date(r.fechaISO).toISOString().split('T')[0] === fechaStrISO);
+                const registrosDia = registros.filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaStrISO);
                 if (registrosDia.length > 0) {
                     const dotContainer = document.createElement('div');
                     dotContainer.className = 'dot-container';
@@ -1103,7 +1196,7 @@
 
             for (let d = 1; d <= ultimoDiaFecha; d++) {
                 const fechaActual = new Date(año, mes, d);
-                const fechaStrISO = fechaActual.toISOString().split('T')[0];
+                const fechaStrISO = aFechaLocalISO(fechaActual);
                 
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'cal-day';
@@ -1113,7 +1206,7 @@
                 dayDiv.innerText = d;
                 dayDiv.onclick = () => seleccionarFechaFiltro(fechaStrISO);
 
-                const registrosDia = registros.filter(r => r && r.fechaISO && new Date(r.fechaISO).toISOString().split('T')[0] === fechaStrISO);
+                const registrosDia = registros.filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaStrISO);
                 if (registrosDia.length > 0) {
                     const dotContainer = document.createElement('div');
                     dotContainer.className = 'dot-container';
@@ -1147,12 +1240,26 @@
 
         if (clientesBD.length === 0) {
             listaDir.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No hay clientes guardados aún.</p>';
+            renderPanelSeguimientos([]);
+            renderPanelTopClientes(new Map());
             return;
         }
 
         clientesBD.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
         const ahora = new Date();
+        const ultimaVisitaPorCliente = new Map();
+        const visitasPorCliente = new Map();
+        registros.forEach(r => {
+            if (!r || !r.nombre || !r.atendido || !r.fechaISO) return;
+            const clave = r.nombre.toLowerCase();
+            const fecha = new Date(r.fechaISO);
+            const previa = ultimaVisitaPorCliente.get(clave);
+            if (!previa || fecha > previa) ultimaVisitaPorCliente.set(clave, fecha);
+            visitasPorCliente.set(clave, (visitasPorCliente.get(clave) || 0) + 1);
+        });
+
+        const listaSeguimiento = [];
 
         clientesBD.forEach(c => {
             if (!c.nombre) return;
@@ -1161,23 +1268,21 @@
             option.value = c.nombre;
             datalist.appendChild(option);
 
-            const registrosClienteAtendido = registros.filter(r => r && r.nombre && r.nombre.toLowerCase() === c.nombre.toLowerCase() && r.atendido)
-                                                      .sort((a, b) => new Date(b.fechaISO) - new Date(a.fechaISO));
-            
             let textoUltimaVisita = 'Sin atenciones registradas';
             let diasSinVenir = null;
             let requiereSeguimiento = false;
             let freqDias = c.frecuenciaDias || 14;
 
-            if (registrosClienteAtendido.length > 0) {
-                const ultFechaObj = new Date(registrosClienteAtendido[0].fechaISO);
+            const ultFechaObj = ultimaVisitaPorCliente.get(c.nombre.toLowerCase());
+            if (ultFechaObj) {
                 textoUltimaVisita = ultFechaObj.toLocaleDateString();
-                
+
                 const diffTime = Math.abs(ahora - ultFechaObj);
                 diasSinVenir = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diasSinVenir >= freqDias) {
                     requiereSeguimiento = true;
+                    listaSeguimiento.push({ nombre: c.nombre, telefono: c.telefono || '', dias: diasSinVenir });
                 }
             }
 
@@ -1199,35 +1304,177 @@
 
             item.innerHTML = `
                 <div class="avatar-container">
-                    <img src="${fotoMostrar}" class="avatar-cliente" onclick="abrirGaleriaCliente('${c.nombre}')">
+                    <img src="${fotoMostrar}" class="avatar-cliente" alt="${escHtml(c.nombre)}">
                     ${cantFotos > 0 ? `<span class="badge-cant-fotos">${cantFotos}</span>` : ''}
                 </div>
                 <div class="cliente-info-box">
                     <div class="cliente-header">
                         <div>
-                            <strong>${c.nombre}</strong> ${c.telefono ? `<small style="color:var(--text-muted);">(${c.telefono})</small>` : ''}<br>
+                            <strong>${escHtml(c.nombre)}</strong> ${c.telefono ? `<small style="color:var(--text-muted);">(${escHtml(c.telefono)})</small>` : ''}<br>
                             <small style="color: var(--text-muted);">Frecuencia habitual: Cada ${freqDias} días | Última visita: ${textoUltimaVisita}</small>
                         </div>
-                        <button onclick="eliminarCliente(${c.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.85rem;">✕</button>
+                        <button class="btn-eliminar-cliente" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.85rem;">✕</button>
                     </div>
-                    
+
                     <div class="cliente-info-extra">
                         ${htmlStatusSeguimiento}
                         ${requiereSeguimiento ? `
-                            <button class="btn-ws" onclick="enviarSeguimientoWhatsApp('${c.nombre}', '${c.telefono || ''}', ${diasSinVenir})">
+                            <button class="btn-ws btn-recordar-cliente">
                                 📱 Recordar por WhatsApp
                             </button>
                         ` : ''}
                     </div>
                 </div>
             `;
+            item.querySelector('.avatar-cliente').onclick = () => abrirGaleriaCliente(c.nombre);
+            item.querySelector('.btn-eliminar-cliente').onclick = () => eliminarCliente(c.id);
+            const btnRecordar = item.querySelector('.btn-recordar-cliente');
+            if (btnRecordar) btnRecordar.onclick = () => enviarSeguimientoWhatsApp(c.nombre, c.telefono || '', diasSinVenir);
             listaDir.appendChild(item);
+        });
+
+        renderPanelSeguimientos(listaSeguimiento);
+        renderPanelTopClientes(visitasPorCliente);
+    }
+
+    function renderPanelSeguimientos(lista) {
+        const panel = document.getElementById('panelSeguimientos');
+        if (!panel) return;
+
+        if (lista.length === 0) {
+            panel.innerHTML = '<div class="panel-seguimiento panel-ok">✓ Todos los clientes están al día con sus visitas</div>';
+            return;
+        }
+
+        lista.sort((a, b) => b.dias - a.dias);
+
+        const items = lista.map(c => `
+            <div class="seg-item">
+                <span>⚠️ <strong>${escHtml(c.nombre)}</strong> — ${c.dias} días sin venir</span>
+                ${c.telefono ? `<button type="button" class="btn-ws btn-recordar-panel" data-nombre="${escHtml(c.nombre)}" data-telefono="${escHtml(c.telefono)}" data-dias="${c.dias}">📱 Recordar</button>` : ''}
+            </div>
+        `).join('');
+
+        panel.innerHTML = `
+            <div class="panel-seguimiento">
+                <span class="panel-titulo">⏰ Clientes sin venir hace mucho (${lista.length})</span>
+                ${items}
+            </div>
+        `;
+
+        panel.querySelectorAll('.btn-recordar-panel').forEach(btn => {
+            btn.onclick = () => enviarSeguimientoWhatsApp(btn.dataset.nombre, btn.dataset.telefono, parseInt(btn.dataset.dias, 10));
+        });
+    }
+
+    function renderPanelTopClientes(visitasPorCliente) {
+        const panel = document.getElementById('panelTopClientes');
+        if (!panel) return;
+
+        const ranking = [...visitasPorCliente.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+        if (ranking.length === 0) {
+            panel.innerHTML = '';
+            return;
+        }
+
+        const medallas = ['🥇', '🥈', '🥉'];
+        const items = ranking.map(([clave, cantidad], i) => {
+            const cliente = clientesBD.find(c => c && c.nombre && c.nombre.toLowerCase() === clave);
+            const nombre = cliente ? cliente.nombre : clave;
+            return `
+                <div class="ranking-item pos-${i + 1}">
+                    <span class="ranking-pos">${medallas[i]}</span>
+                    <strong>${escHtml(nombre)}</strong>
+                    <span class="ranking-cant">${cantidad} ${cantidad === 1 ? 'visita' : 'visitas'}</span>
+                </div>
+            `;
+        }).join('');
+
+        panel.innerHTML = `
+            <span class="panel-titulo">🏆 Clientes Más Frecuentes</span>
+            ${items}
+        `;
+    }
+
+    function iconoEstadoPago(estado) {
+        if (estado === 'Pagado') return '🟢';
+        if (estado === 'Abono') return '🟡';
+        return '❌';
+    }
+
+    function renderPanelDia() {
+        const panel = document.getElementById('panelDiaCalendario');
+        if (!panel) return;
+
+        if (fechaFiltroSeleccionada) {
+            const registrosDia = registros
+                .filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaFiltroSeleccionada)
+                .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
+
+            const pendientes = registrosDia.filter(r => !r.atendido);
+            const atendidos = registrosDia.filter(r => r.atendido);
+            const tituloFecha = new Date(`${fechaFiltroSeleccionada}T12:00:00`).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+
+            const filaDia = (r) => {
+                const hora = new Date(r.fechaISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div class="dia-item">
+                        <span class="dia-hora">${hora}</span>
+                        <strong>${escHtml(r.nombre || 'Sin Nombre')}</strong>
+                        <span class="dia-monto">${iconoEstadoPago(r.estadoPago)} $${(r.monto || 0).toFixed(2)}</span>
+                        <button type="button" class="tag ${r.atendido ? 'btn-atendido' : 'btn-por-atender'} btn-dia-toggle" data-id="${r.id}">${r.atendido ? '↩ Deshacer' : '✓ Atender'}</button>
+                    </div>
+                `;
+            };
+
+            panel.innerHTML = `
+                <div class="panel-dia">
+                    <span class="panel-titulo">📅 <span style="text-transform:capitalize;">${escHtml(tituloFecha)}</span></span>
+                    ${registrosDia.length === 0 ? '<p class="panel-vacio">No hay registros para este día.</p>' : ''}
+                    ${pendientes.length > 0 ? `<span class="panel-subtitulo">⏳ Por atender (${pendientes.length})</span>${pendientes.map(filaDia).join('')}` : ''}
+                    ${atendidos.length > 0 ? `<span class="panel-subtitulo">✅ Ya atendidos (${atendidos.length})</span>${atendidos.map(filaDia).join('')}` : ''}
+                </div>
+            `;
+        } else {
+            const hoyInicio = new Date();
+            hoyInicio.setHours(0, 0, 0, 0);
+
+            const proximas = registros
+                .filter(r => r && r.fechaISO && !r.atendido && new Date(r.fechaISO) >= hoyInicio)
+                .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO))
+                .slice(0, 8);
+
+            const filaProxima = (r) => {
+                const fecha = new Date(r.fechaISO);
+                const etiquetaFecha = fecha.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
+                const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div class="dia-item">
+                        <span class="dia-hora">${etiquetaFecha} · ${hora}</span>
+                        <strong>${escHtml(r.nombre || 'Sin Nombre')}</strong>
+                        <span class="dia-monto">${iconoEstadoPago(r.estadoPago)} $${(r.monto || 0).toFixed(2)}</span>
+                    </div>
+                `;
+            };
+
+            panel.innerHTML = `
+                <div class="panel-dia">
+                    <span class="panel-titulo">⏭️ Próximas Citas</span>
+                    ${proximas.length === 0 ? '<p class="panel-vacio">No hay citas programadas.</p>' : proximas.map(filaProxima).join('')}
+                    <p class="panel-hint">Toca un día del calendario para ver quién fue y quién será atendido. Tócalo de nuevo para volver.</p>
+                </div>
+            `;
+        }
+
+        panel.querySelectorAll('.btn-dia-toggle').forEach(btn => {
+            btn.onclick = () => toggleEstadoAtendido(parseInt(btn.dataset.id, 10));
         });
     }
 
     function render() {
         renderCalendario();
         renderDirectorio();
+        renderPanelDia();
 
         const lista = document.getElementById('listaAtenciones');
         const btnReset = document.getElementById('btnResetFiltro');
@@ -1240,7 +1487,7 @@
         
         // Filtro por fecha del calendario
         if (fechaFiltroSeleccionada) {
-            registrosMostrados = registrosMostrados.filter(r => r && r.fechaISO && new Date(r.fechaISO).toISOString().split('T')[0] === fechaFiltroSeleccionada);
+            registrosMostrados = registrosMostrados.filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaFiltroSeleccionada);
             btnReset.style.display = 'inline-block';
             tituloLista.innerText = `Citas de: ${fechaFiltroSeleccionada}`;
         } else {
@@ -1299,14 +1546,14 @@
             card.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="avatar-container">
-                        <img src="${fotoCard}" class="avatar-cliente" onclick="abrirGaleriaCliente('${r.nombre || 'Cliente'}')">
+                        <img src="${fotoCard}" class="avatar-cliente" alt="${escHtml(r.nombre || 'Cliente')}">
                         ${cantFotos > 0 ? `<span class="badge-cant-fotos">${cantFotos}</span>` : ''}
                     </div>
                     <div>
-                        <strong>${r.nombre || 'Sin Nombre'}</strong> ${r.telefono ? `<small style="color:var(--text-muted);">(${r.telefono})</small>` : ''} <br>
+                        <strong>${escHtml(r.nombre || 'Sin Nombre')}</strong> ${r.telefono ? `<small style="color:var(--text-muted);">(${escHtml(r.telefono)})</small>` : ''} <br>
                         <small style="color: var(--text-muted);">${fechaFormateada} — Total: $${montoVal.toFixed(2)}</small>
                         <div class="tag-group">
-                            <span class="tag ${r.tipo === 'Agendado' ? 'tag-agendado' : 'tag-walkin'}">${r.tipo}</span>
+                            <span class="tag ${r.tipo === 'Agendado' ? 'tag-agendado' : 'tag-walkin'}">${escHtml(r.tipo)}</span>
                             <button class="btn-editar-monto" onclick="editarMontoServicio(${r.id})">✏️ Monto</button>
                             <button class="btn-ws" onclick="enviarReciboWhatsApp(${r.id})">💬 Recibo</button>
                             <button class="btn-foto-corte" onclick="capturarFotoCorte(${r.id})">📷 Foto Corte</button>
@@ -1324,6 +1571,7 @@
                     <button onclick="eliminar(${r.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.85rem;">Eliminar</button>
                 </div>
             `;
+            card.querySelector('.avatar-cliente').onclick = () => abrirGaleriaCliente(r.nombre || 'Cliente');
             lista.appendChild(card);
         });
     }
@@ -1340,6 +1588,7 @@
     // Inicialización al cargar la página
     inicializarFechaHora();
     render();
+    mostrarVista(localStorage.getItem('barberia_vista_activa') || 'vista-nueva');
 </script>
 </body>
 </html>

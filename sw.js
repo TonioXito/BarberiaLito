@@ -1,20 +1,23 @@
 // Service Worker de Lito Barber Studio
 // Permite que la app funcione sin conexión una vez instalada en el teléfono.
-// Nota: los datos de citas y clientes viven en IndexedDB (no aquí), así que
+// Nota: los datos de citas y clientes viven en localStorage (no aquí), así que
 // seguirán disponibles sin conexión sin importar lo que haga este archivo.
 
-const CACHE_NAME = 'lito-barber-cache-v1';
+const CACHE_NAME = 'lito-barber-cache-v4';
 const ARCHIVOS_APP_SHELL = [
     './',
     './index.html',
-    './logo.jpg'
+    './manifest.json',
+    './logo.png',
+    './icon-192.png',
+    './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => cache.addAll(ARCHIVOS_APP_SHELL).catch(() => {
-                // Si logo.jpg u otro archivo no existe todavía, no bloquea la instalación
+                // Si un archivo del shell no existe todavía, no bloquea la instalación
             }))
     );
     self.skipWaiting();
