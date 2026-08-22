@@ -3,7 +3,7 @@
 // Nota: los datos de citas y clientes viven en localStorage (no aquí), así que
 // seguirán disponibles sin conexión sin importar lo que haga este archivo.
 
-const CACHE_NAME = 'lito-barber-cache-v4';
+const CACHE_NAME = 'lito-barber-cache-v7';
 const ARCHIVOS_APP_SHELL = [
     './',
     './index.html',

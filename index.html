@@ -103,14 +103,21 @@
 
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-name { font-weight: bold; font-size: 0.8rem; color: var(--text-muted); padding: 4px 0; }
-        .cal-day { background: #0f172a; padding: 10px 0; border-radius: 6px; font-size: 0.85rem; position: relative; cursor: pointer; border: 1px solid transparent; }
+        .cal-day { background: #0f172a; padding: 8px 0; border-radius: 6px; font-size: 0.85rem; position: relative; cursor: pointer; border: 1px solid transparent; }
         .cal-day:hover { border-color: var(--accent); }
         .cal-day.today { border: 2px solid var(--accent); font-weight: bold; color: var(--accent); }
         .cal-day.selected { background: var(--accent); color: white; }
-        .dot-container { display: flex; justify-content: center; gap: 3px; margin-top: 4px; }
+        .cal-resumen { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px 7px; margin-bottom: 10px; display: flex; gap: 8px; text-align: center; }
+        .cal-resumen-stat { flex: 1; font-size: 1.05rem; font-weight: bold; }
+        .cal-resumen-stat .valor-atendidos { color: #93c5fd; }
+        .cal-resumen-stat .valor-dinero { color: var(--success); }
+        .cal-resumen-stat small { display: block; font-size: 0.64rem; font-weight: normal; color: var(--text-muted); letter-spacing: 0.3px; text-transform: uppercase; margin-top: 2px; line-height: 1.3; }
+        .dia-num { line-height: 1.2; }
+        .dia-marcas { display: flex; justify-content: center; align-items: center; gap: 3px; margin-top: 2px; min-height: 14px; }
         .dot { width: 6px; height: 6px; border-radius: 50%; }
         .dot-agendado { background: #3b82f6; }
-        .dot-atendido { background: var(--success); }
+        .dia-contador { font-size: 0.62rem; font-weight: bold; background: #14532d; color: #86efac; padding: 1px 7px; border-radius: 8px; line-height: 1.5; }
+        .cal-day.selected .dia-contador { background: rgba(255,255,255,0.25); color: white; }
 
         /* LISTA Y TARJETAS */
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; text-align: center; }
@@ -291,6 +298,8 @@
             <strong id="calTitulo">Semana Actual</strong>
             <button onclick="navegarCalendario(1)">▶</button>
         </div>
+
+        <div class="cal-resumen" id="calResumen"></div>
         
         <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
             <div class="cal-toggle-group">
@@ -1131,101 +1140,129 @@
     function renderCalendario() {
         const calTituloElem = document.getElementById('calTitulo');
         const calDiasElem = document.getElementById('calDias');
+        const calResumenElem = document.getElementById('calResumen');
         if (!calTituloElem || !calDiasElem) return;
 
         calDiasElem.innerHTML = '';
         const hoyStr = new Date().toDateString();
+        const nombresMesesCortos = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        const nombresMesesCompletos = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        let celdas = [];
+        let inicioPeriodo, finPeriodo;
+        let etiquetaPeriodo = '';
 
         if (modoVista === 'semana') {
             const inicioSemana = new Date(fechaCalendario);
+            inicioSemana.setHours(0, 0, 0, 0);
             inicioSemana.setDate(fechaCalendario.getDate() - fechaCalendario.getDay());
 
             const finSemana = new Date(inicioSemana);
             finSemana.setDate(inicioSemana.getDate() + 6);
+            finSemana.setHours(23, 59, 59, 999);
 
-            const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-            calTituloElem.innerText = `${inicioSemana.getDate()} ${nombresMeses[inicioSemana.getMonth()]} - ${finSemana.getDate()} ${nombresMeses[finSemana.getMonth()]}`;
+            calTituloElem.innerText = `${inicioSemana.getDate()} ${nombresMesesCortos[inicioSemana.getMonth()]} - ${finSemana.getDate()} ${nombresMesesCortos[finSemana.getMonth()]}`;
+            etiquetaPeriodo = 'en esta semana';
 
+            inicioPeriodo = inicioSemana;
+            finPeriodo = finSemana;
             for (let i = 0; i < 7; i++) {
                 const diaActual = new Date(inicioSemana);
                 diaActual.setDate(inicioSemana.getDate() + i);
-                const fechaStrISO = aFechaLocalISO(diaActual);
-
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'cal-day';
-                if (diaActual.toDateString() === hoyStr) dayDiv.classList.add('today');
-                if (fechaFiltroSeleccionada === fechaStrISO) dayDiv.classList.add('selected');
-
-                dayDiv.innerText = diaActual.getDate();
-                dayDiv.onclick = () => seleccionarFechaFiltro(fechaStrISO);
-
-                const registrosDia = registros.filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaStrISO);
-                if (registrosDia.length > 0) {
-                    const dotContainer = document.createElement('div');
-                    dotContainer.className = 'dot-container';
-                    if (registrosDia.some(r => r.tipo === 'Agendado' && !r.atendido)) {
-                        const dotA = document.createElement('span');
-                        dotA.className = 'dot dot-agendado';
-                        dotContainer.appendChild(dotA);
-                    }
-                    if (registrosDia.some(r => r.atendido)) {
-                        const dotOk = document.createElement('span');
-                        dotOk.className = 'dot dot-atendido';
-                        dotContainer.appendChild(dotOk);
-                    }
-                    dayDiv.appendChild(dotContainer);
-                }
-
-                calDiasElem.appendChild(dayDiv);
+                celdas.push(diaActual);
             }
-
         } else {
             const año = fechaCalendario.getFullYear();
             const mes = fechaCalendario.getMonth();
-            const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            
-            calTituloElem.innerText = `${nombresMeses[mes]} ${año}`;
 
-            const primerDiaIndex = new Date(año, mes, 1).getDay();
+            calTituloElem.innerText = `${nombresMesesCompletos[mes]} ${año}`;
+            etiquetaPeriodo = `en ${nombresMesesCompletos[mes]} ${año}`;
+
+            inicioPeriodo = new Date(año, mes, 1);
+            finPeriodo = new Date(año, mes + 1, 0, 23, 59, 59, 999);
             const ultimoDiaFecha = new Date(año, mes + 1, 0).getDate();
-
-            for (let i = 0; i < primerDiaIndex; i++) {
-                const emptyDiv = document.createElement('div');
-                calDiasElem.appendChild(emptyDiv);
-            }
-
             for (let d = 1; d <= ultimoDiaFecha; d++) {
-                const fechaActual = new Date(año, mes, d);
-                const fechaStrISO = aFechaLocalISO(fechaActual);
-                
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'cal-day';
-                if (fechaActual.toDateString() === hoyStr) dayDiv.classList.add('today');
-                if (fechaFiltroSeleccionada === fechaStrISO) dayDiv.classList.add('selected');
-
-                dayDiv.innerText = d;
-                dayDiv.onclick = () => seleccionarFechaFiltro(fechaStrISO);
-
-                const registrosDia = registros.filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaStrISO);
-                if (registrosDia.length > 0) {
-                    const dotContainer = document.createElement('div');
-                    dotContainer.className = 'dot-container';
-                    if (registrosDia.some(r => r.tipo === 'Agendado' && !r.atendido)) {
-                        const dotA = document.createElement('span');
-                        dotA.className = 'dot dot-agendado';
-                        dotContainer.appendChild(dotA);
-                    }
-                    if (registrosDia.some(r => r.atendido)) {
-                        const dotOk = document.createElement('span');
-                        dotOk.className = 'dot dot-atendido';
-                        dotContainer.appendChild(dotOk);
-                    }
-                    dayDiv.appendChild(dotContainer);
-                }
-
-                calDiasElem.appendChild(dayDiv);
+                celdas.push(new Date(año, mes, d));
             }
         }
+
+        const atendidosPorDia = new Map();
+        const pendientesAgendaPorDia = new Map();
+        let recaudadoPeriodo = 0;
+        let atendidosPeriodo = 0;
+
+        registros.forEach(r => {
+            if (!r || !r.fechaISO) return;
+            const fecha = new Date(r.fechaISO);
+            const clave = aFechaLocalISO(fecha);
+            if (fecha >= inicioPeriodo && fecha <= finPeriodo) {
+                recaudadoPeriodo += (r.abono || 0);
+                if (r.atendido) atendidosPeriodo++;
+            }
+            if (r.atendido) {
+                atendidosPorDia.set(clave, (atendidosPorDia.get(clave) || 0) + 1);
+            } else if (r.tipo === 'Agendado') {
+                pendientesAgendaPorDia.set(clave, (pendientesAgendaPorDia.get(clave) || 0) + 1);
+            }
+        });
+
+        if (calResumenElem) {
+            calResumenElem.innerHTML = `
+                <div class="cal-resumen-stat">
+                    <span class="valor-atendidos">✂️ ${atendidosPeriodo}</span>
+                    <small>atendidos ${etiquetaPeriodo}</small>
+                </div>
+                <div class="cal-resumen-stat">
+                    <span class="valor-dinero">💵 $${recaudadoPeriodo.toFixed(2)}</span>
+                    <small>recaudados ${etiquetaPeriodo}</small>
+                </div>
+            `;
+        }
+
+        const fragmento = document.createDocumentFragment();
+
+        if (modoVista === 'mes') {
+            const primerDiaIndex = new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth(), 1).getDay();
+            for (let i = 0; i < primerDiaIndex; i++) {
+                fragmento.appendChild(document.createElement('div'));
+            }
+        }
+
+        celdas.forEach(fechaActual => {
+            const fechaStrISO = aFechaLocalISO(fechaActual);
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'cal-day';
+            if (fechaActual.toDateString() === hoyStr) dayDiv.classList.add('today');
+            if (fechaFiltroSeleccionada === fechaStrISO) dayDiv.classList.add('selected');
+
+            const numDiv = document.createElement('div');
+            numDiv.className = 'dia-num';
+            numDiv.innerText = fechaActual.getDate();
+            dayDiv.appendChild(numDiv);
+
+            const cantAtendidos = atendidosPorDia.get(fechaStrISO) || 0;
+            if (cantAtendidos > 0 || (pendientesAgendaPorDia.get(fechaStrISO) || 0) > 0) {
+                const marcas = document.createElement('div');
+                marcas.className = 'dia-marcas';
+                if (cantAtendidos > 0) {
+                    const contador = document.createElement('span');
+                    contador.className = 'dia-contador';
+                    contador.textContent = `✓${cantAtendidos}`;
+                    marcas.appendChild(contador);
+                } else {
+                    const punto = document.createElement('span');
+                    punto.className = 'dot dot-agendado';
+                    marcas.appendChild(punto);
+                }
+                dayDiv.appendChild(marcas);
+            }
+
+            dayDiv.onclick = () => seleccionarFechaFiltro(fechaStrISO);
+            fragmento.appendChild(dayDiv);
+        });
+
+        calDiasElem.appendChild(fragmento);
     }
 
     function renderDirectorio() {
@@ -1371,13 +1408,13 @@
         const panel = document.getElementById('panelTopClientes');
         if (!panel) return;
 
-        const ranking = [...visitasPorCliente.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+        const ranking = [...visitasPorCliente.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
         if (ranking.length === 0) {
             panel.innerHTML = '';
             return;
         }
 
-        const medallas = ['🥇', '🥈', '🥉'];
+        const medallas = ['🥇', '🥈', '🥉', '🏅', '🏅'];
         const items = ranking.map(([clave, cantidad], i) => {
             const cliente = clientesBD.find(c => c && c.nombre && c.nombre.toLowerCase() === clave);
             const nombre = cliente ? cliente.nombre : clave;
