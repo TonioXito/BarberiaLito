@@ -920,9 +920,13 @@
 
         const idxCliente = clientesBD.findIndex(c => c && c.nombre && c.nombre.toLowerCase() === nombre.toLowerCase());
         let fotoExistente = '';
-        
+        let telefonoRegistro = telefono;
+
         if (idxCliente >= 0) {
-            if (telefono) clientesBD[idxCliente].telefono = telefono;
+            if (!telefonoRegistro && clientesBD[idxCliente].telefono) {
+                telefonoRegistro = clientesBD[idxCliente].telefono;
+            }
+            if (telefonoRegistro) clientesBD[idxCliente].telefono = telefonoRegistro;
             clientesBD[idxCliente].frecuenciaDias = frecuenciaDias;
             const fotosArr = obtenerFotosCliente(nombre);
             fotoExistente = fotosArr.length > 0 ? fotosArr[0] : '';
@@ -944,7 +948,7 @@
         const nuevoRegistro = {
             id: generarId(),
             nombre: nombre,
-            telefono: telefono,
+            telefono: telefonoRegistro,
             foto: fotoExistente,
             fechaISO: fechaCita.toISOString(),
             tipo: tipo,
@@ -1017,8 +1021,15 @@
     }
 
     /* ENVIAR WHATSAPP DE FORMA SEGURA Y CORREGIDA */
-    function abrirWhatsAppMensaje(telefono, texto) {
-        let telLimpio = telefono ? telefono.replace(/[^0-9]/g, '') : '';
+    function obtenerTelefonoCliente(nombreCliente) {
+        if (!nombreCliente) return '';
+        const cliente = clientesBD.find(c => c && c.nombre && c.nombre.toLowerCase() === nombreCliente.toLowerCase());
+        return cliente && cliente.telefono ? cliente.telefono : '';
+    }
+
+    function abrirWhatsAppMensaje(telefono, texto, nombreCliente) {
+        const telOriginal = telefono || obtenerTelefonoCliente(nombreCliente);
+        let telLimpio = telOriginal ? telOriginal.replace(/[^0-9]/g, '') : '';
         let url = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(texto)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
         window.open(url, '_blank');
     }
@@ -1029,7 +1040,7 @@
         texto += `¿Te gustaría agendar tu cita para estos días y mantener tu estilo al día? 💈🔥\n\n`;
         texto += `¡Escríbenos y te apartamos tu turno!`;
 
-        abrirWhatsAppMensaje(telefonoCliente, texto);
+        abrirWhatsAppMensaje(telefonoCliente, texto, nombreCliente);
     }
 
     function enviarReciboWhatsApp(id) {
@@ -1058,7 +1069,7 @@
         texto += `--------------------------------\n`;
         texto += `¡Gracias por tu preferencia! 🙌`;
 
-        abrirWhatsAppMensaje(r.telefono, texto);
+        abrirWhatsAppMensaje(r.telefono, texto, r.nombre);
     }
 
     function exportarResumenWhatsApp() {
