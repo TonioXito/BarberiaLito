@@ -170,6 +170,12 @@
         .dia-monto { margin-left: auto; font-weight: bold; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
         .btn-dia-toggle { padding: 5px 10px; font-size: 0.7rem; }
 
+        /* BANNER DE RECORDATORIOS DEL DÍA */
+        .banner-recordatorios { border-color: var(--warning); background: #2a2113; }
+        .recordatorio-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; font-size: 0.85rem; border-top: 1px solid rgba(202,138,4,0.35); flex-wrap: wrap; margin-top: 5px; }
+        .recordatorio-item.recordatorio-urgente strong { color: #fde047; }
+        .btn-rec-atender { padding: 3px 10px; }
+
         /* MODALES */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:999; padding: 15px; box-sizing: border-box; }
         .modal-card { background: var(--card); border: 1px solid var(--border); width: 100%; max-width: 480px; border-radius: 12px; padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-height: 85vh; display: flex; flex-direction: column; }
@@ -223,6 +229,9 @@
         </div>
         <p>Gestión de Citas y Clientes</p>
     </div>
+
+    <!-- RECORDATORIOS DEL DÍA -->
+    <div id="bannerRecordatorios"></div>
 
     <!-- SECCIÓN: NUEVA CITA -->
     <section class="vista active" id="vista-nueva">
@@ -299,6 +308,7 @@
         <div class="cal-header">
             <button onclick="navegarCalendario(-1)">◀</button>
             <strong id="calTitulo">Semana Actual</strong>
+            <button id="btnNotificaciones" onclick="activarNotificaciones()" title="Activar notificaciones">🔕</button>
             <button onclick="navegarCalendario(1)">▶</button>
         </div>
 
@@ -488,6 +498,122 @@
     ].join('\n');
 
     let plantillaRecibo = localStorage.getItem('barberia_plantilla_recibo') || PLANTILLA_RECIBO_DEFAULT;
+
+    /* RECORDATORIOS DE CITAS */
+    const CLAVE_RECORDATORIOS = 'barberia_recordatorios_v1';
+    let recordatoriosEnviados = (() => {
+        try { return JSON.parse(localStorage.getItem(CLAVE_RECORDATORIOS)) || {}; } catch (e) { return {}; }
+    })();
+
+    function guardarRecordatorios() {
+        try { localStorage.setItem(CLAVE_RECORDATORIOS, JSON.stringify(recordatoriosEnviados)); } catch (e) {}
+    }
+
+    function podarRecordatorios() {
+        const idsValidos = new Set(registros.map(r => r && r.id));
+        let cambio = false;
+        Object.keys(recordatoriosEnviados).forEach(clave => {
+            if (!idsValidos.has(parseInt(clave.split(':')[0], 10))) {
+                delete recordatoriosEnviados[clave];
+                cambio = true;
+            }
+        });
+        if (cambio) guardarRecordatorios();
+    }
+
+    function notificarNavegador(registro, minutosRestantes) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const fecha = new Date(registro.fechaISO);
+        const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const cuerpo = minutosRestantes === null
+            ? `Tiene cita hoy a las ${hora}`
+            : (minutosRestantes > 0 ? `Su cita es dentro de ${minutosRestantes} min (${hora})` : `Su cita era a las ${hora}`);
+        try { new Notification(`💈 Cita: ${registro.nombre}`, { body: cuerpo }); } catch (e) {}
+    }
+
+    function revisarRecordatorios() {
+        const banner = document.getElementById('bannerRecordatorios');
+        if (!banner) return;
+
+        const ahora = new Date();
+        const hoyISO = aFechaLocalISO(ahora);
+        const citasHoy = [];
+
+        registros.forEach(r => {
+            if (!r || !r.fechaISO || r.tipo !== 'Agendado' || r.atendido) return;
+            const fecha = new Date(r.fechaISO);
+            if (aFechaLocalISO(fecha) !== hoyISO) return;
+
+            citasHoy.push({ registro: r, fecha: fecha });
+
+            const claveDia = `${r.id}:dia`;
+            if (!recordatoriosEnviados[claveDia]) {
+                recordatoriosEnviados[claveDia] = true;
+                notificarNavegador(r, null);
+                guardarRecordatorios();
+            }
+
+            const diffMin = Math.round((fecha - ahora) / 60000);
+            if (diffMin <= 60 && diffMin > -30) {
+                const claveHora = `${r.id}:1h`;
+                if (!recordatoriosEnviados[claveHora]) {
+                    recordatoriosEnviados[claveHora] = true;
+                    notificarNavegador(r, Math.max(diffMin, 0));
+                    guardarRecordatorios();
+                }
+            }
+        });
+
+        if (citasHoy.length === 0) {
+            banner.innerHTML = '';
+            return;
+        }
+
+        citasHoy.sort((a, b) => a.fecha - b.fecha);
+        const filas = citasHoy.map(({ registro, fecha }) => {
+            const diffMin = Math.round((fecha - ahora) / 60000);
+            const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const etiqueta = diffMin > 60 ? hora : (diffMin > 0 ? `${hora} · en ${diffMin} min` : `${hora} · ya llegó`);
+            const urgente = diffMin <= 60 ? ' recordatorio-urgente' : '';
+            return `
+                <div class="recordatorio-item${urgente}">
+                    <span>⏰ <strong>${escHtml(registro.nombre)}</strong> — ${etiqueta}</span>
+                    <button type="button" class="tag btn-atendido btn-rec-atender" data-id="${registro.id}">✓ Atender</button>
+                </div>
+            `;
+        }).join('');
+
+        banner.innerHTML = `
+            <div class="card banner-recordatorios">
+                <strong>🔔 Citas para hoy (${citasHoy.length})</strong>
+                ${filas}
+            </div>
+        `;
+
+        banner.querySelectorAll('.btn-rec-atender').forEach(btn => {
+            btn.onclick = () => toggleEstadoAtendido(parseInt(btn.dataset.id, 10));
+        });
+    }
+
+    function activarNotificaciones() {
+        if (!('Notification' in window)) {
+            alert('Este navegador no soporta notificaciones.');
+            return;
+        }
+        if (Notification.permission === 'granted') {
+            alert('Las notificaciones ya están activadas.');
+            return;
+        }
+        Notification.requestPermission().then(() => actualizarBotonNotificaciones());
+    }
+
+    function actualizarBotonNotificaciones() {
+        const btn = document.getElementById('btnNotificaciones');
+        if (!btn || !('Notification' in window)) return;
+        const activas = Notification.permission === 'granted';
+        btn.textContent = activas ? '🔔' : '🔕';
+        btn.title = activas ? 'Notificaciones activadas' : 'Activar notificaciones del teléfono';
+    }
 
     function inicializarFechaHora() {
         const ahora = new Date();
@@ -1708,6 +1834,8 @@
             card.querySelector('.avatar-cliente').onclick = () => abrirGaleriaCliente(r.nombre || 'Cliente');
             lista.appendChild(card);
         });
+
+        revisarRecordatorios();
     }
 
     // REGISTRO DEL SERVICE WORKER PARA HABILITAR PWA
@@ -1723,6 +1851,10 @@
     inicializarFechaHora();
     render();
     mostrarVista(localStorage.getItem('barberia_vista_activa') || 'vista-nueva');
+    podarRecordatorios();
+    actualizarBotonNotificaciones();
+    revisarRecordatorios();
+    setInterval(revisarRecordatorios, 60000);
 </script>
 </body>
 </html>
