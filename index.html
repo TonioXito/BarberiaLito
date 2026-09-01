@@ -76,6 +76,7 @@
         .btn-update { background: #0284c7; color: white; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
         
         .btn-agenda-header { background: #3b82f6; color: white; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .btn-horario-header { background: #16a34a; color: white; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 
         /* AVATAR Y BADGE DE GALERÍA */
         .avatar-container { position: relative; display: inline-block; }
@@ -97,6 +98,7 @@
         /* CALENDARIO & VISTAS */
         .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .cal-header button { background: var(--border); padding: 6px 14px; }
+        .cal-header .btn-cal-hoy { background: var(--success); color: white; padding: 6px 10px; font-size: 0.75rem; }
         .cal-toggle-group { display: flex; background: #0f172a; border-radius: 8px; padding: 2px; border: 1px solid var(--border); }
         .cal-toggle-btn { background: transparent; color: var(--text-muted); padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; }
         .cal-toggle-btn.active { background: var(--accent); color: white; }
@@ -170,6 +172,20 @@
         .dia-monto { margin-left: auto; font-weight: bold; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
         .btn-dia-toggle { padding: 5px 10px; font-size: 0.7rem; }
 
+        /* LÍNEA DE TIEMPO DEL MODO DÍA */
+        .dia-bloque-hora { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; min-height: 40px; }
+        .dia-bloque-hora-label { display: block; color: var(--text-muted); font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; }
+        .dia-bloque-ahora { border-color: var(--warning); background: #241d11; }
+        .dia-bloque-pasada { opacity: 0.55; }
+        .dia-bloque-vacio .dia-bloque-vacio-text { color: var(--text-muted); opacity: 0.4; }
+        .dia-citas-container { display: flex; flex-direction: column; gap: 4px; }
+        .dia-bloque-cita { display: flex; align-items: center; gap: 6px; background: #1e3a8a; color: #bfdbfe; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; flex-wrap: wrap; }
+        .dia-bloque-cita.cita-atendida { background: #14532d; color: #86efac; opacity: 0.85; }
+        .dia-bloque-cita.cita-walkin { background: #134e4a; color: #99f6e4; }
+        .dia-bloque-cita-hora { font-weight: bold; opacity: 0.85; white-space: nowrap; }
+        .dia-bloque-cita-pago { white-space: nowrap; }
+        .dia-bloque-cita .btn-dia-toggle { padding: 1px 7px; font-size: 0.7rem; }
+
         /* BANNER DE RECORDATORIOS DEL DÍA */
         .banner-recordatorios { border-color: var(--warning); background: #2a2113; }
         .recordatorio-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; font-size: 0.85rem; border-top: 1px solid rgba(202,138,4,0.35); flex-wrap: wrap; margin-top: 5px; }
@@ -239,7 +255,10 @@
     <div class="card">
         <h2>
             <span>Agendar o Registrar Cita</span>
-            <button type="button" class="btn-agenda-header" onclick="abrirModalAgenda()">📖 Agenda</button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-horario-header" onclick="abrirModalHorario()">🕐 Horario</button>
+                <button type="button" class="btn-agenda-header" onclick="abrirModalAgenda()">📖 Agenda</button>
+            </div>
         </h2>
         
         <div class="form-group">
@@ -253,23 +272,26 @@
                 <label>Teléfono (opcional)</label>
                 <input type="tel" id="telefono" placeholder="Ej. +584121234567">
             </div>
-            <div class="form-group">
-                <label>Frecuencia de Visita</label>
-                <div class="form-frecuencia-selector">
-                    <button type="button" class="btn-form-frecuencia" id="btnFreq7" onclick="seleccionarFrecuenciaFormulario(7)">Semanal</button>
-                    <button type="button" class="btn-form-frecuencia active" id="btnFreq14" onclick="seleccionarFrecuenciaFormulario(14)">2 Semanas</button>
-                </div>
+        </div>
+
+        <div class="form-group">
+            <label>Frecuencia de Visita</label>
+            <div class="form-frecuencia-selector">
+                <button type="button" class="btn-form-frecuencia" id="btnFreq7" onclick="seleccionarFrecuenciaFormulario(7)">Semanal</button>
+                <button type="button" class="btn-form-frecuencia active" id="btnFreq14" onclick="seleccionarFrecuenciaFormulario(14)">Quincenal</button>
+                <button type="button" class="btn-form-frecuencia" id="btnFreq30" onclick="seleccionarFrecuenciaFormulario(30)">Mensual</button>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label>Fecha Seleccionada</label>
-                <input type="date" id="fechaSeleccionada" class="input-destacado">
+                <input type="date" id="fechaSeleccionada" class="input-destacado" onchange="recalcularHoraSugerida()">
             </div>
             <div class="form-group">
-                <label>Hora Seleccionada</label>
-                <input type="time" id="horaSeleccionada" class="input-destacado">
+                <label>Hora de Atención</label>
+                <input type="time" id="horaSeleccionada" class="input-destacado" onchange="marcarHoraManual()">
+                <small id="lblHoraSugerida" style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 3px;"></small>
             </div>
         </div>
 
@@ -308,6 +330,7 @@
         <div class="cal-header">
             <button onclick="navegarCalendario(-1)">◀</button>
             <strong id="calTitulo">Semana Actual</strong>
+            <button class="btn-cal-hoy" onclick="irAHoy()">Hoy</button>
             <button id="btnNotificaciones" onclick="activarNotificaciones()" title="Activar notificaciones">🔕</button>
             <button onclick="navegarCalendario(1)">▶</button>
         </div>
@@ -316,6 +339,7 @@
         
         <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
             <div class="cal-toggle-group">
+                <button class="cal-toggle-btn" id="btnVistaDia" onclick="cambiarModoVista('dia')">⏰ Día</button>
                 <button class="cal-toggle-btn active" id="btnVistaSemana" onclick="cambiarModoVista('semana')">Semanal</button>
                 <button class="cal-toggle-btn" id="btnVistaMes" onclick="cambiarModoVista('mes')">Mensual</button>
             </div>
@@ -451,12 +475,65 @@
     </div>
 </div>
 
+<!-- MODAL CONFIGURACIÓN DE HORARIO DE ATENCIÓN -->
+<div class="modal-overlay" id="modalHorario">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>🕐 Horario de Atención</h3>
+            <button class="modal-close" onclick="cerrarModalHorario()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Apertura</label>
+                    <input type="time" id="horaApertura" class="input-destacado" oninput="actualizarResumenHorario()">
+                </div>
+                <div class="form-group">
+                    <label>Cierre</label>
+                    <input type="time" id="horaCierre" class="input-destacado" oninput="actualizarResumenHorario()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Espaciado entre citas</label>
+                <select id="espaciadoCitas" class="input-destacado" onchange="actualizarResumenHorario()">
+                    <option value="30">30 minutos</option>
+                    <option value="45">45 minutos</option>
+                    <option value="60">60 minutos</option>
+                </select>
+            </div>
+            <p id="lblHorarioResumen" style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin: 8px 0 0;"></p>
+        </div>
+        <div class="btn-group">
+            <button class="btn-restore" onclick="restablecerHorario()">♻️ Reiniciar</button>
+            <button class="btn-primary" onclick="guardarHorario()">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let registros = JSON.parse(localStorage.getItem('barberia_registros_v4')) || [];
     let clientesBD = JSON.parse(localStorage.getItem('barberia_clientes_v4')) || [];
     
+    const configHorarioDefault = { apertura: 8, cierre: 20, espaciadoMin: 30 };
+    let configHorario = (() => {
+        try {
+            const datos = JSON.parse(localStorage.getItem('barberia_horario_v1'));
+            if (datos && typeof datos === 'object') {
+                const apertura = parseInt(datos.apertura, 10);
+                const cierre = parseInt(datos.cierre, 10);
+                const espaciado = parseInt(datos.espaciadoMin, 10);
+                if (!isNaN(apertura) && !isNaN(cierre) && !isNaN(espaciado)) {
+                    return { apertura: apertura, cierre: cierre, espaciadoMin: espaciado };
+                }
+            }
+        } catch (e) {}
+        return { ...configHorarioDefault };
+    })();
+
     let fechaCalendario = new Date();
-    let modoVista = 'semana';
+    let modoVista = localStorage.getItem('barberia_modo_vista') || 'semana';
+    if (!['dia', 'semana', 'mes'].includes(modoVista)) modoVista = 'semana';
+    let horaManualForm = false;
     let fechaFiltroSeleccionada = null;
     let filtroEstadoPago = 'Todos'; 
     let estadoPagoSeleccionadoForm = 'Pendiente';
@@ -615,12 +692,172 @@
         btn.title = activas ? 'Notificaciones activadas' : 'Activar notificaciones del teléfono';
     }
 
+    /* RANKING TRIMESTRAL: compite por trimestre; el campeón descansa los 2 trimestres siguientes */
+    const CLAVE_RANKING = 'barberia_ranking_v1';
+    let estadoRanking = (() => {
+        try {
+            const datos = JSON.parse(localStorage.getItem(CLAVE_RANKING));
+            return datos && typeof datos === 'object' ? datos : { trimestre: '', ganadores: {} };
+        } catch (e) { return { trimestre: '', ganadores: {} }; }
+    })();
+    estadoRanking.ganadores = estadoRanking.ganadores || {};
+
+    function guardarEstadoRanking() {
+        try { localStorage.setItem(CLAVE_RANKING, JSON.stringify(estadoRanking)); } catch (e) {}
+    }
+
+    function claveDesdeIndiceTrimestre(indice) {
+        return `${Math.floor(indice / 4)}-T${(indice % 4) + 1}`;
+    }
+
+    function claveTrimestre(fecha) {
+        return claveDesdeIndiceTrimestre(fecha.getFullYear() * 4 + Math.floor(fecha.getMonth() / 3));
+    }
+
+    function indiceTrimestre(clave) {
+        const partes = String(clave).split('-T');
+        return parseInt(partes[0], 10) * 4 + (parseInt(partes[1], 10) - 1);
+    }
+
+    function rangoDeTrimestre(indice) {
+        const año = Math.floor(indice / 4);
+        const mesInicio = (indice % 4) * 3;
+        return { inicio: new Date(año, mesInicio, 1), fin: new Date(año, mesInicio + 3, 0, 23, 59, 59, 999) };
+    }
+
+    function ganadorDeTrimestre(indice) {
+        const { inicio, fin } = rangoDeTrimestre(indice);
+        const conteo = new Map();
+        registros.forEach(r => {
+            if (!r || !r.nombre || !r.atendido || !r.fechaISO) return;
+            const fecha = new Date(r.fechaISO);
+            if (fecha < inicio || fecha > fin) return;
+            const clave = r.nombre.toLowerCase();
+            conteo.set(clave, (conteo.get(clave) || 0) + 1);
+        });
+        let mejor = null;
+        conteo.forEach((cantidad, clave) => {
+            if (!mejor || cantidad > mejor.cantidad) mejor = { clave, cantidad };
+        });
+        return mejor ? mejor.clave : '';
+    }
+
+    function actualizarCicloRanking() {
+        const indiceActual = indiceTrimestre(claveTrimestre(new Date()));
+        const indiceGuardado = estadoRanking.trimestre ? indiceTrimestre(estadoRanking.trimestre) : indiceActual;
+        if (estadoRanking.trimestre && indiceGuardado === indiceActual) return;
+
+        let idx = indiceGuardado;
+        while (idx < indiceActual) {
+            const claveCerrada = claveDesdeIndiceTrimestre(idx);
+            if (!(claveCerrada in estadoRanking.ganadores)) {
+                estadoRanking.ganadores[claveCerrada] = ganadorDeTrimestre(idx);
+            }
+            idx++;
+        }
+        estadoRanking.trimestre = claveDesdeIndiceTrimestre(indiceActual);
+        guardarEstadoRanking();
+    }
+
+    function obtenerSiguienteHuecoLibre(fechaISO, separacionMin) {
+        const sep = separacionMin || configHorario.espaciadoMin || 30;
+        const HORA_CIERRE = (configHorario.cierre || 20) * 60;
+        const HORA_APERTURA = (configHorario.apertura || 8) * 60;
+        const fechaBase = new Date(fechaISO);
+        const diaStr = aFechaLocalISO(fechaBase);
+
+        const ocupados = {};
+        registros.forEach(r => {
+            if (!r || !r.fechaISO) return;
+            if (aFechaLocalISO(new Date(r.fechaISO)) !== diaStr) return;
+            const d = new Date(r.fechaISO);
+            const mins = d.getHours() * 60 + d.getMinutes();
+            const franja = Math.floor(mins / sep) * sep;
+            ocupados[franja] = (ocupados[franja] || 0) + 1;
+        });
+
+        let inicio = new Date(fechaBase);
+        inicio.setSeconds(0, 0);
+        const hoyStr = aFechaLocalISO(new Date());
+        let minsIni;
+        if (diaStr !== hoyStr) {
+            minsIni = HORA_APERTURA;
+        } else {
+            minsIni = inicio.getMinutes() % sep === 0 ? inicio.getHours() * 60 + inicio.getMinutes() : Math.ceil((inicio.getHours() * 60 + inicio.getMinutes()) / sep) * sep;
+        }
+        let hora = minsIni;
+
+        for (let intento = 0; intento < 200; intento++) {
+            if (hora <= HORA_APERTURA) hora = HORA_APERTURA;
+            if (hora >= HORA_CIERRE) break;
+            const clave = hora;
+            const ocupadas = ocupados[clave] || 0;
+            if (ocupadas === 0) {
+                return { hora: hora, minutos: 0 };
+            }
+            hora += sep;
+        }
+        return null;
+    }
+
     function inicializarFechaHora() {
         const ahora = new Date();
         const pad = (n) => String(n).padStart(2, '0');
-        
+        horaManualForm = false;
+
         document.getElementById('fechaSeleccionada').value = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`;
-        document.getElementById('horaSeleccionada').value = `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
+
+        const inputHora = document.getElementById('horaSeleccionada');
+        const lblHora = document.getElementById('lblHoraSugerida');
+
+        const hoyProxy = aFechaLocalISO(ahora);
+        const hueco = obtenerSiguienteHuecoLibre(hoyProxy + 'T' + `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:00`, configHorario.espaciadoMin);
+        if (hueco) {
+            inputHora.value = `${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
+            if (lblHora) {
+                const restan = hueco.hora - (ahora.getHours() * 60 + ahora.getMinutes());
+                lblHora.textContent = restan > 0 ? `⏳ Siguiente horario libre: ${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}` : `Hubo disponibilidad ahora: ${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
+            }
+        } else {
+            inputHora.value = '';
+            if (lblHora) lblHora.textContent = '⛔ Agenda llena por hoy.';
+        }
+    }
+
+    function marcarHoraManual() {
+        horaManualForm = true;
+        const lblHora = document.getElementById('lblHoraSugerida');
+        if (lblHora) lblHora.textContent = '';
+    }
+
+    function recalcularHoraSugerida() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const fechaVal = document.getElementById('fechaSeleccionada').value;
+        const inputHora = document.getElementById('horaSeleccionada');
+        const lblHora = document.getElementById('lblHoraSugerida');
+        if (!fechaVal || !inputHora || !lblHora) return;
+
+        const ahora = new Date();
+        const hoyStr = aFechaLocalISO(ahora);
+
+        if (fechaVal === hoyStr && !horaManualForm) {
+            inicializarFechaHora();
+            return;
+        }
+
+        const base = new Date(`${fechaVal}T12:00:00`);
+        const diaISO = fechaVal;
+
+        const hueco = obtenerSiguienteHuecoLibre(`${diaISO}T12:00:00`, configHorario.espaciadoMin);
+        if (hueco) {
+            inputHora.value = `${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
+            if (!horaManualForm) {
+                lblHora.textContent = `🕐 Horario asignado: ${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
+            }
+        } else {
+            inputHora.value = '';
+            lblHora.textContent = '⛔ Agenda llena ese día.';
+        }
     }
 
     function actualizarAplicacion() {
@@ -987,6 +1224,74 @@
         document.getElementById('modalAgenda').style.display = 'none';
     }
 
+    const _horaAMStr = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+    function abrirModalHorario() {
+        document.getElementById('horaApertura').value = _horaAMStr(configHorario.apertura, 0);
+        document.getElementById('horaCierre').value = _horaAMStr(configHorario.cierre, 0);
+        document.getElementById('espaciadoCitas').value = String(configHorario.espaciadoMin);
+        actualizarResumenHorario();
+        document.getElementById('modalHorario').style.display = 'flex';
+    }
+
+    function cerrarModalHorario() {
+        document.getElementById('modalHorario').style.display = 'none';
+    }
+
+    function actualizarResumenHorario() {
+        const aperturaVal = document.getElementById('horaApertura').value;
+        const cierreVal = document.getElementById('horaCierre').value;
+        const espaciadoVal = document.getElementById('espaciadoCitas').value;
+        if (!aperturaVal || !cierreVal) {
+            document.getElementById('lblHorarioResumen').textContent = 'Selecciona apertura y cierre.';
+            return;
+        }
+        const a = parseInt(aperturaVal.split(':')[0], 10);
+        const b = parseInt(cierreVal.split(':')[0], 10);
+        const partes = Math.max(0, Math.floor(((b - a) * 60) / parseInt(espaciadoVal, 10)));
+        document.getElementById('lblHorarioResumen').textContent = `Atiendes de ${aperturaVal} a ${cierreVal} (aprox. ${partes} horarios de ${espaciadoVal} min)`;
+    }
+
+    function guardarHorario() {
+        const aperturaVal = document.getElementById('horaApertura').value;
+        const cierreVal = document.getElementById('horaCierre').value;
+        const espaciadoVal = document.getElementById('espaciadoCitas').value;
+        if (!aperturaVal || !cierreVal) {
+            alert('Selecciona la hora de apertura y cierre.');
+            return;
+        }
+        const apertura = parseInt(aperturaVal.split(':')[0], 10);
+        const cierre = parseInt(cierreVal.split(':')[0], 10);
+        const espaciado = parseInt(espaciadoVal, 10) || 30;
+
+        if (cierre <= apertura) {
+            alert('La hora de cierre debe ser mayor que la de apertura.');
+            return;
+        }
+
+        configHorario = { apertura: apertura, cierre: cierre, espaciadoMin: espaciado };
+        try {
+            localStorage.setItem('barberia_horario_v1', JSON.stringify(configHorario));
+        } catch (e) {}
+        cerrarModalHorario();
+        render();
+        alert('Horario de atención guardado ✓');
+    }
+
+    function restablecerHorario() {
+        configHorario = { ...configHorarioDefault };
+        document.getElementById('horaApertura').value = _horaAMStr(configHorario.apertura, 0);
+        document.getElementById('horaCierre').value = _horaAMStr(configHorario.cierre, 0);
+        document.getElementById('espaciadoCitas').value = String(configHorario.espaciadoMin);
+        try {
+            localStorage.setItem('barberia_horario_v1', JSON.stringify(configHorario));
+        } catch (e) {}
+        actualizarResumenHorario();
+        render();
+        alert('Horario reiniciado a 8:00 - 20:00, cada 30 min.');
+    }
+
+
     function filtrarClientesModal() {
         const query = document.getElementById('buscarClienteModal').value.toLowerCase().trim();
         const contenedor = document.getElementById('listaClientesModal');
@@ -1037,23 +1342,42 @@
 
     function cambiarModoVista(modo) {
         modoVista = modo;
+        try { localStorage.setItem('barberia_modo_vista', modo); } catch (e) {}
+        if (modo === 'dia' && fechaFiltroSeleccionada) {
+            const fechaSeleccionadaObj = new Date(`${fechaFiltroSeleccionada}T12:00:00`);
+            if (!isNaN(fechaSeleccionadaObj.getTime())) {
+                fechaCalendario = fechaSeleccionadaObj;
+            }
+        }
+        document.getElementById('btnVistaDia').classList.toggle('active', modo === 'dia');
         document.getElementById('btnVistaSemana').classList.toggle('active', modo === 'semana');
         document.getElementById('btnVistaMes').classList.toggle('active', modo === 'mes');
-        renderCalendario();
+        render();
     }
 
     function navegarCalendario(delta) {
         if (modoVista === 'semana') {
             fechaCalendario.setDate(fechaCalendario.getDate() + (delta * 7));
-        } else {
+        } else if (modoVista === 'mes') {
             fechaCalendario.setMonth(fechaCalendario.getMonth() + delta);
+        } else {
+            fechaCalendario.setDate(fechaCalendario.getDate() + delta);
         }
-        renderCalendario();
+        render();
+    }
+
+    function irAHoy() {
+        fechaCalendario = new Date();
+        fechaCalendario.setDate(new Date().getDate());
+        fechaFiltroSeleccionada = aFechaLocalISO(fechaCalendario);
+        document.getElementById('fechaSeleccionada').value = aFechaLocalISO(fechaCalendario);
+        if (modoVista === 'dia') horaManualForm = false;
+        render();
     }
 
     function seleccionarFrecuenciaFormulario(dias) {
         frecuenciaSeleccionadaForm = parseInt(dias);
-        [7, 14].forEach(d => {
+        [7, 14, 30].forEach(d => {
             const btn = document.getElementById(`btnFreq${d}`);
             if (btn) {
                 btn.classList.toggle('active', d === frecuenciaSeleccionadaForm);
@@ -1151,8 +1475,21 @@
         }
 
         let fechaCita = new Date();
-        if (tipo !== 'Sin Agenda' && fechaVal && horaVal) {
-            fechaCita = new Date(`${fechaVal}T${horaVal}`);
+        if (fechaVal && horaVal) {
+            const fechaParsed = new Date(`${fechaVal}T${horaVal}`);
+            if (!isNaN(fechaParsed.getTime())) {
+                fechaCita = fechaParsed;
+            }
+        }
+
+        if (!horaManualForm) {
+            const diaISO = aFechaLocalISO(fechaCita);
+            const hueco = obtenerSiguienteHuecoLibre(`${diaISO}T${pad2(fechaCita.getHours())}:${pad2(fechaCita.getMinutes())}:00`, configHorario.espaciadoMin);
+            if (hueco) {
+                const ajustada = new Date(diaISO + 'T00:00:00');
+                ajustada.setHours(Math.floor(hueco.hora / 60), hueco.minutos, 0, 0);
+                fechaCita = ajustada;
+            }
         }
 
         const nuevoRegistro = {
@@ -1364,7 +1701,15 @@
         const calTituloElem = document.getElementById('calTitulo');
         const calDiasElem = document.getElementById('calDias');
         const calResumenElem = document.getElementById('calResumen');
+        const diasSemanaElem = document.getElementById('diasSemana');
         if (!calTituloElem || !calDiasElem) return;
+
+        calDiasElem.style.gridTemplateColumns = modoVista === 'dia' ? '1fr' : 'repeat(7, 1fr)';
+        calDiasElem.style.gap = modoVista === 'dia' ? '6px' : '5px';
+        if (diasSemanaElem) {
+            const diaVisible = modoVista === 'dia';
+            diasSemanaElem.style.display = diaVisible ? 'none' : 'grid';
+        }
 
         calDiasElem.innerHTML = '';
         const hoyStr = new Date().toDateString();
@@ -1394,6 +1739,18 @@
                 diaActual.setDate(inicioSemana.getDate() + i);
                 celdas.push(diaActual);
             }
+        } else if (modoVista === 'dia') {
+            const inicioDia = new Date(fechaCalendario);
+            inicioDia.setHours(0, 0, 0, 0);
+            const finDia = new Date(fechaCalendario);
+            finDia.setHours(23, 59, 59, 999);
+
+            calTituloElem.innerText = `${inicioDia.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+            etiquetaPeriodo = 'en este día';
+
+            inicioPeriodo = inicioDia;
+            finPeriodo = finDia;
+            celdas.push(inicioDia);
         } else {
             const año = fechaCalendario.getFullYear();
             const mes = fechaCalendario.getMonth();
@@ -1443,6 +1800,78 @@
         }
 
         const fragmento = document.createDocumentFragment();
+
+        if (modoVista === 'dia') {
+            const registrosDia = registros
+                .filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === aFechaLocalISO(fechaCalendario))
+                .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
+
+            const horaActual = new Date();
+            const esHoy = fechaCalendario.toDateString() === hoyStr;
+            const aperturaHora = configHorario.apertura || 8;
+            const cierreHora = configHorario.cierre || 20;
+
+            for (let h = aperturaHora; h <= cierreHora; h++) {
+                const bloque = document.createElement('div');
+                bloque.className = 'dia-bloque-hora';
+
+                const horaEtiqueta = document.createElement('span');
+                horaEtiqueta.className = 'dia-bloque-hora-label';
+                const hh = String(h).padStart(2, '0');
+                horaEtiqueta.textContent = `${hh}:00`;
+
+                if (esHoy) {
+                    const actualHoras = horaActual.getHours() + horaActual.getMinutes() / 60;
+                    if (h <= actualHoras && actualHoras < h + 1) {
+                        bloque.classList.add('dia-bloque-ahora');
+                    } else if (h < Math.floor(actualHoras)) {
+                        bloque.classList.add('dia-bloque-pasada');
+                    }
+                }
+
+                bloque.appendChild(horaEtiqueta);
+
+                const citasEnBloque = registrosDia.filter(r => {
+                    const fd = new Date(r.fechaISO);
+                    const hrs = fd.getHours() + fd.getMinutes() / 60;
+                    return hrs >= h && hrs < h + 1;
+                });
+
+                if (citasEnBloque.length === 0) {
+                    bloque.classList.add('dia-bloque-vacio');
+                    const texto = document.createElement('span');
+                    texto.className = 'dia-bloque-vacio-text';
+                    texto.textContent = '·';
+                    bloque.appendChild(texto);
+                } else {
+                    const contenedor = document.createElement('div');
+                    contenedor.className = 'dia-citas-container';
+                    citasEnBloque.forEach(r => {
+                        const cita = document.createElement('div');
+                        const horaReal = new Date(r.fechaISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        cita.className = 'dia-bloque-cita ' + (r.atendido ? 'cita-atendida' : (r.tipo === 'Agendado' ? 'cita-agendada' : 'cita-walkin'));
+                        cita.innerHTML = `
+                            <span class="dia-bloque-cita-hora">${horaReal}</span>
+                            <strong>${escHtml(r.nombre || 'Sin Nombre')}</strong>
+                            <span class="dia-bloque-cita-pago">${iconoEstadoPago(r.estadoPago)}</span>
+                            <button type="button" class="tag btn-dia-toggle" data-id="${r.id}">${r.atendido ? '↩' : '✓'}</button>
+                        `;
+                        contenedor.appendChild(cita);
+                    });
+                    bloque.appendChild(contenedor);
+                }
+
+                fragmento.appendChild(bloque);
+            }
+
+            calDiasElem.appendChild(fragmento);
+
+            fragmento.querySelectorAll('.btn-dia-toggle').forEach(btn => {
+                btn.onclick = () => toggleEstadoAtendido(parseInt(btn.dataset.id, 10));
+            });
+
+            return;
+        }
 
         if (modoVista === 'mes') {
             const primerDiaIndex = new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth(), 1).getDay();
@@ -1508,6 +1937,8 @@
         clientesBD.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
         const ahora = new Date();
+        const inicioTrimestre = new Date(ahora.getFullYear(), Math.floor(ahora.getMonth() / 3) * 3, 1);
+        const finTrimestre = new Date(ahora.getFullYear(), Math.floor(ahora.getMonth() / 3) * 3 + 3, 0, 23, 59, 59, 999);
         const ultimaVisitaPorCliente = new Map();
         const visitasPorCliente = new Map();
         registros.forEach(r => {
@@ -1516,7 +1947,9 @@
             const fecha = new Date(r.fechaISO);
             const previa = ultimaVisitaPorCliente.get(clave);
             if (!previa || fecha > previa) ultimaVisitaPorCliente.set(clave, fecha);
-            visitasPorCliente.set(clave, (visitasPorCliente.get(clave) || 0) + 1);
+            if (fecha >= inicioTrimestre && fecha <= finTrimestre) {
+                visitasPorCliente.set(clave, (visitasPorCliente.get(clave) || 0) + 1);
+            }
         });
 
         const listaSeguimiento = [];
@@ -1631,9 +2064,31 @@
         const panel = document.getElementById('panelTopClientes');
         if (!panel) return;
 
-        const ranking = [...visitasPorCliente.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+        actualizarCicloRanking();
+
+        const hoyRanking = new Date();
+        const indiceActual = indiceTrimestre(claveTrimestre(hoyRanking));
+        const excluidos = new Set();
+        Object.entries(estadoRanking.ganadores).forEach(([claveTrim, ganador]) => {
+            if (!ganador) return;
+            const diff = indiceActual - indiceTrimestre(claveTrim);
+            if (diff >= 1 && diff <= 2) excluidos.add(ganador);
+        });
+
+        const ranking = [...visitasPorCliente.entries()]
+            .filter(([clave]) => !excluidos.has(clave))
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        const nombresMesesAnio = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const mesInicioTri = Math.floor(hoyRanking.getMonth() / 3) * 3;
+        const etiquetaPeriodo = `${nombresMesesAnio[mesInicioTri]} – ${nombresMesesAnio[mesInicioTri + 2]} ${hoyRanking.getFullYear()}`;
+
         if (ranking.length === 0) {
-            panel.innerHTML = '';
+            panel.innerHTML = `
+                <span class="panel-titulo">🏆 Clientes Más Frecuentes</span>
+                <p style="color:var(--text-muted); font-size:.8rem;">Sin visitas registradas en ${escHtml(etiquetaPeriodo)}.</p>
+            `;
             return;
         }
 
@@ -1652,6 +2107,7 @@
 
         panel.innerHTML = `
             <span class="panel-titulo">🏆 Clientes Más Frecuentes</span>
+            <small style="display:block; color:var(--text-muted); font-size:.7rem; margin-bottom:6px;">${escHtml(etiquetaPeriodo)} · el campeón descansa 6 meses</small>
             ${items}
         `;
     }
@@ -1666,14 +2122,16 @@
         const panel = document.getElementById('panelDiaCalendario');
         if (!panel) return;
 
-        if (fechaFiltroSeleccionada) {
+        const diaEfectivo = modoVista === 'dia' ? aFechaLocalISO(fechaCalendario) : fechaFiltroSeleccionada;
+
+        if (diaEfectivo) {
             const registrosDia = registros
-                .filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === fechaFiltroSeleccionada)
+                .filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === diaEfectivo)
                 .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
 
             const pendientes = registrosDia.filter(r => !r.atendido);
             const atendidos = registrosDia.filter(r => r.atendido);
-            const tituloFecha = new Date(`${fechaFiltroSeleccionada}T12:00:00`).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+            const tituloFecha = new Date(`${diaEfectivo}T12:00:00`).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
 
             const filaDia = (r) => {
                 const hora = new Date(r.fechaISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1850,6 +2308,9 @@
     // Inicialización al cargar la página
     inicializarFechaHora();
     render();
+    document.getElementById('btnVistaDia').classList.toggle('active', modoVista === 'dia');
+    document.getElementById('btnVistaSemana').classList.toggle('active', modoVista === 'semana');
+    document.getElementById('btnVistaMes').classList.toggle('active', modoVista === 'mes');
     mostrarVista(localStorage.getItem('barberia_vista_activa') || 'vista-nueva');
     podarRecordatorios();
     actualizarBotonNotificaciones();
