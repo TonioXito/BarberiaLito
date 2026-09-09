@@ -172,19 +172,21 @@
         .dia-monto { margin-left: auto; font-weight: bold; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
         .btn-dia-toggle { padding: 5px 10px; font-size: 0.7rem; }
 
-        /* LÍNEA DE TIEMPO DEL MODO DÍA */
-        .dia-bloque-hora { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; min-height: 40px; }
-        .dia-bloque-hora-label { display: block; color: var(--text-muted); font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; }
-        .dia-bloque-ahora { border-color: var(--warning); background: #241d11; }
-        .dia-bloque-pasada { opacity: 0.55; }
-        .dia-bloque-vacio .dia-bloque-vacio-text { color: var(--text-muted); opacity: 0.4; }
-        .dia-citas-container { display: flex; flex-direction: column; gap: 4px; }
-        .dia-bloque-cita { display: flex; align-items: center; gap: 6px; background: #1e3a8a; color: #bfdbfe; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; flex-wrap: wrap; }
-        .dia-bloque-cita.cita-atendida { background: #14532d; color: #86efac; opacity: 0.85; }
-        .dia-bloque-cita.cita-walkin { background: #134e4a; color: #99f6e4; }
-        .dia-bloque-cita-hora { font-weight: bold; opacity: 0.85; white-space: nowrap; }
-        .dia-bloque-cita-pago { white-space: nowrap; }
-        .dia-bloque-cita .btn-dia-toggle { padding: 1px 7px; font-size: 0.7rem; }
+        /* LÍNEA DE TIEMPO DEL MODO DÍA (estilo Google Calendar) */
+        .dia-tl { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #0f172a; }
+        .dia-tl-horas { width: 54px; flex-shrink: 0; border-right: 1px solid var(--border); position: relative; }
+        .dia-tl-hora { height: 60px; position: relative; }
+        .dia-tl-hora span { position: absolute; top: -7px; right: 6px; font-size: 0.66rem; color: var(--text-muted); }
+        .dia-tl-contenido { flex: 1; position: relative; }
+        .dia-tl-linea { position: absolute; left: 0; right: 0; border-top: 1px solid var(--border); opacity: 0.5; }
+        .dia-tl-cita { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 0.72rem; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.4); box-sizing: border-box; cursor: pointer; line-height: 1.3; }
+        .dia-tl-cita.cita-agendada { background: #1e3a8a; color: #bfdbfe; border-left: 3px solid #3b82f6; }
+        .dia-tl-cita.cita-atendida { background: #14532d; color: #86efac; border-left: 3px solid #16a34a; opacity: 0.9; }
+        .dia-tl-cita.cita-walkin { background: #134e4a; color: #99f6e4; border-left: 3px solid #14b8a6; }
+        .dia-tl-cita strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dia-tl-cita .dia-tl-cita-hora { font-weight: bold; opacity: 0.9; white-space: nowrap; }
+        .dia-tl-ahora { position: absolute; left: 0; right: 0; border-top: 2px solid #ef4444; z-index: 5; }
+        .dia-tl-ahora::before { content: "●"; position: absolute; top: -8px; left: -2px; color: #ef4444; font-size: 0.7rem; }
 
         /* BANNER DE RECORDATORIOS DEL DÍA */
         .banner-recordatorios { border-color: var(--warning); background: #2a2113; }
@@ -494,7 +496,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Espaciado entre citas</label>
+                <label>Aviso si una cita cae a menos de...</label>
                 <select id="espaciadoCitas" class="input-destacado" onchange="actualizarResumenHorario()">
                     <option value="30">30 minutos</option>
                     <option value="45">45 minutos</option>
@@ -759,69 +761,16 @@
         guardarEstadoRanking();
     }
 
-    function obtenerSiguienteHuecoLibre(fechaISO, separacionMin) {
-        const sep = separacionMin || configHorario.espaciadoMin || 30;
-        const HORA_CIERRE = (configHorario.cierre || 20) * 60;
-        const HORA_APERTURA = (configHorario.apertura || 8) * 60;
-        const fechaBase = new Date(fechaISO);
-        const diaStr = aFechaLocalISO(fechaBase);
-
-        const ocupados = {};
-        registros.forEach(r => {
-            if (!r || !r.fechaISO) return;
-            if (aFechaLocalISO(new Date(r.fechaISO)) !== diaStr) return;
-            const d = new Date(r.fechaISO);
-            const mins = d.getHours() * 60 + d.getMinutes();
-            const franja = Math.floor(mins / sep) * sep;
-            ocupados[franja] = (ocupados[franja] || 0) + 1;
-        });
-
-        let inicio = new Date(fechaBase);
-        inicio.setSeconds(0, 0);
-        const hoyStr = aFechaLocalISO(new Date());
-        let minsIni;
-        if (diaStr !== hoyStr) {
-            minsIni = HORA_APERTURA;
-        } else {
-            minsIni = inicio.getMinutes() % sep === 0 ? inicio.getHours() * 60 + inicio.getMinutes() : Math.ceil((inicio.getHours() * 60 + inicio.getMinutes()) / sep) * sep;
-        }
-        let hora = minsIni;
-
-        for (let intento = 0; intento < 200; intento++) {
-            if (hora <= HORA_APERTURA) hora = HORA_APERTURA;
-            if (hora >= HORA_CIERRE) break;
-            const clave = hora;
-            const ocupadas = ocupados[clave] || 0;
-            if (ocupadas === 0) {
-                return { hora: hora, minutos: 0 };
-            }
-            hora += sep;
-        }
-        return null;
-    }
-
     function inicializarFechaHora() {
         const ahora = new Date();
         const pad = (n) => String(n).padStart(2, '0');
         horaManualForm = false;
 
         document.getElementById('fechaSeleccionada').value = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`;
+        document.getElementById('horaSeleccionada').value = `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
 
-        const inputHora = document.getElementById('horaSeleccionada');
         const lblHora = document.getElementById('lblHoraSugerida');
-
-        const hoyProxy = aFechaLocalISO(ahora);
-        const hueco = obtenerSiguienteHuecoLibre(hoyProxy + 'T' + `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:00`, configHorario.espaciadoMin);
-        if (hueco) {
-            inputHora.value = `${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
-            if (lblHora) {
-                const restan = hueco.hora - (ahora.getHours() * 60 + ahora.getMinutes());
-                lblHora.textContent = restan > 0 ? `⏳ Siguiente horario libre: ${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}` : `Hubo disponibilidad ahora: ${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
-            }
-        } else {
-            inputHora.value = '';
-            if (lblHora) lblHora.textContent = '⛔ Agenda llena por hoy.';
-        }
+        if (lblHora) lblHora.textContent = `Hora actual: ${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
     }
 
     function marcarHoraManual() {
@@ -835,28 +784,21 @@
         const fechaVal = document.getElementById('fechaSeleccionada').value;
         const inputHora = document.getElementById('horaSeleccionada');
         const lblHora = document.getElementById('lblHoraSugerida');
-        if (!fechaVal || !inputHora || !lblHora) return;
+        if (!fechaVal || !inputHora) return;
 
         const ahora = new Date();
         const hoyStr = aFechaLocalISO(ahora);
 
         if (fechaVal === hoyStr && !horaManualForm) {
-            inicializarFechaHora();
+            inputHora.value = `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
+            if (lblHora) lblHora.textContent = `Hora actual: ${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
             return;
         }
 
-        const base = new Date(`${fechaVal}T12:00:00`);
-        const diaISO = fechaVal;
-
-        const hueco = obtenerSiguienteHuecoLibre(`${diaISO}T12:00:00`, configHorario.espaciadoMin);
-        if (hueco) {
-            inputHora.value = `${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
-            if (!horaManualForm) {
-                lblHora.textContent = `🕐 Horario asignado: ${pad(Math.floor(hueco.hora / 60))}:${pad(hueco.minutos)}`;
-            }
-        } else {
-            inputHora.value = '';
-            lblHora.textContent = '⛔ Agenda llena ese día.';
+        if (fechaVal !== hoyStr && !horaManualForm) {
+            const apertura = configHorario.apertura || 8;
+            inputHora.value = `${pad(apertura)}:00`;
+            if (lblHora) lblHora.textContent = `Horario de apertura: ${pad(apertura)}:00`;
         }
     }
 
@@ -1248,8 +1190,7 @@
         }
         const a = parseInt(aperturaVal.split(':')[0], 10);
         const b = parseInt(cierreVal.split(':')[0], 10);
-        const partes = Math.max(0, Math.floor(((b - a) * 60) / parseInt(espaciadoVal, 10)));
-        document.getElementById('lblHorarioResumen').textContent = `Atiendes de ${aperturaVal} a ${cierreVal} (aprox. ${partes} horarios de ${espaciadoVal} min)`;
+        document.getElementById('lblHorarioResumen').textContent = `Atiendes de ${aperturaVal} a ${cierreVal}. Se avisará si una cita cae a menos de ${espaciadoVal} minutos de otra.`;
     }
 
     function guardarHorario() {
@@ -1288,7 +1229,7 @@
         } catch (e) {}
         actualizarResumenHorario();
         render();
-        alert('Horario reiniciado a 8:00 - 20:00, cada 30 min.');
+        alert('Horario reiniciado a 8:00 - 20:00, aviso de cercanía cada 30 min.');
     }
 
 
@@ -1482,13 +1423,11 @@
             }
         }
 
-        if (!horaManualForm) {
+        if (tipo === 'Agendado') {
             const diaISO = aFechaLocalISO(fechaCita);
-            const hueco = obtenerSiguienteHuecoLibre(`${diaISO}T${pad2(fechaCita.getHours())}:${pad2(fechaCita.getMinutes())}:00`, configHorario.espaciadoMin);
-            if (hueco) {
-                const ajustada = new Date(diaISO + 'T00:00:00');
-                ajustada.setHours(Math.floor(hueco.hora / 60), hueco.minutos, 0, 0);
-                fechaCita = ajustada;
+            const cerca = registros.some(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === diaISO && Math.abs(new Date(r.fechaISO) - fechaCita) > 0 && Math.abs(new Date(r.fechaISO) - fechaCita) <= (configHorario.espaciadoMin || 30) * 60000);
+            if (cerca && !confirm(`⚠️ Ya hay una cita muy cercana a las ${horaVal}.\n\n¿Deseas agendarla de todos modos?`)) {
+                return;
             }
         }
 
@@ -1806,69 +1745,97 @@
                 .filter(r => r && r.fechaISO && aFechaLocalISO(new Date(r.fechaISO)) === aFechaLocalISO(fechaCalendario))
                 .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
 
-            const horaActual = new Date();
-            const esHoy = fechaCalendario.toDateString() === hoyStr;
             const aperturaHora = configHorario.apertura || 8;
             const cierreHora = configHorario.cierre || 20;
+            const ALTO_HORA = 60;
+            const DURACION_VISUAL_MIN = 45;
+            const totalMin = Math.max(0, (cierreHora - aperturaHora) * 60);
 
-            for (let h = aperturaHora; h <= cierreHora; h++) {
-                const bloque = document.createElement('div');
-                bloque.className = 'dia-bloque-hora';
-
-                const horaEtiqueta = document.createElement('span');
-                horaEtiqueta.className = 'dia-bloque-hora-label';
-                const hh = String(h).padStart(2, '0');
-                horaEtiqueta.textContent = `${hh}:00`;
-
-                if (esHoy) {
-                    const actualHoras = horaActual.getHours() + horaActual.getMinutes() / 60;
-                    if (h <= actualHoras && actualHoras < h + 1) {
-                        bloque.classList.add('dia-bloque-ahora');
-                    } else if (h < Math.floor(actualHoras)) {
-                        bloque.classList.add('dia-bloque-pasada');
-                    }
+            // CONSTRUIR COLUMNAS: citas solapadas una al lado de la otra
+            const conInfo = registrosDia.map(r => {
+                const fechaCitaObj = new Date(r.fechaISO);
+                const inicioMin = fechaCitaObj.getHours() * 60 + fechaCitaObj.getMinutes();
+                return { r, inicioMin, finMin: inicioMin + DURACION_VISUAL_MIN };
+            });
+            const columnas = [];
+            const colocadas = [];
+            conInfo.forEach(c => {
+                let col = -1;
+                for (let i = 0; i < columnas.length; i++) {
+                    if (columnas[i] <= c.inicioMin) { col = i; break; }
                 }
-
-                bloque.appendChild(horaEtiqueta);
-
-                const citasEnBloque = registrosDia.filter(r => {
-                    const fd = new Date(r.fechaISO);
-                    const hrs = fd.getHours() + fd.getMinutes() / 60;
-                    return hrs >= h && hrs < h + 1;
-                });
-
-                if (citasEnBloque.length === 0) {
-                    bloque.classList.add('dia-bloque-vacio');
-                    const texto = document.createElement('span');
-                    texto.className = 'dia-bloque-vacio-text';
-                    texto.textContent = '·';
-                    bloque.appendChild(texto);
+                if (col === -1) {
+                    col = columnas.length;
+                    columnas.push(c.finMin);
                 } else {
-                    const contenedor = document.createElement('div');
-                    contenedor.className = 'dia-citas-container';
-                    citasEnBloque.forEach(r => {
-                        const cita = document.createElement('div');
-                        const horaReal = new Date(r.fechaISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        cita.className = 'dia-bloque-cita ' + (r.atendido ? 'cita-atendida' : (r.tipo === 'Agendado' ? 'cita-agendada' : 'cita-walkin'));
-                        cita.innerHTML = `
-                            <span class="dia-bloque-cita-hora">${horaReal}</span>
-                            <strong>${escHtml(r.nombre || 'Sin Nombre')}</strong>
-                            <span class="dia-bloque-cita-pago">${iconoEstadoPago(r.estadoPago)}</span>
-                            <button type="button" class="tag btn-dia-toggle" data-id="${r.id}">${r.atendido ? '↩' : '✓'}</button>
-                        `;
-                        contenedor.appendChild(cita);
-                    });
-                    bloque.appendChild(contenedor);
+                    columnas[col] = c.finMin;
                 }
+                colocadas.push({ ...c, col });
+            });
+            const numCols = Math.max(1, columnas.length);
 
-                fragmento.appendChild(bloque);
+            const contenedorTl = document.createElement('div');
+            contenedorTl.className = 'dia-tl';
+
+            // COLUMNA DE HORAS
+            const horasCol = document.createElement('div');
+            horasCol.className = 'dia-tl-horas';
+            for (let h = aperturaHora; h <= cierreHora; h++) {
+                const hh = String(h).padStart(2, '0');
+                const divHora = document.createElement('div');
+                divHora.className = 'dia-tl-hora';
+                divHora.innerHTML = `<span>${hh}:00</span>`;
+                horasCol.appendChild(divHora);
             }
 
-            calDiasElem.appendChild(fragmento);
+            // CONTENIDO (línea de tiempo)
+            const contenido = document.createElement('div');
+            contenido.className = 'dia-tl-contenido';
+            contenido.style.minHeight = `${(totalMin / 60) * ALTO_HORA}px`;
 
-            fragmento.querySelectorAll('.btn-dia-toggle').forEach(btn => {
-                btn.onclick = () => toggleEstadoAtendido(parseInt(btn.dataset.id, 10));
+            for (let h = aperturaHora; h <= cierreHora; h++) {
+                const linea = document.createElement('div');
+                linea.className = 'dia-tl-linea';
+                linea.style.top = `${(h - aperturaHora) * ALTO_HORA}px`;
+                contenido.appendChild(linea);
+            }
+
+            // LÍNEA DE HORA ACTUAL (solo si es hoy)
+            const horaActual = new Date();
+            const esHoy = fechaCalendario.toDateString() === horaActual.toDateString();
+            if (esHoy) {
+                const minutosAhora = horaActual.getHours() * 60 + horaActual.getMinutes();
+                if (minutosAhora >= aperturaHora * 60 && minutosAhora <= cierreHora * 60) {
+                    const lineaAhora = document.createElement('div');
+                    lineaAhora.className = 'dia-tl-ahora';
+                    lineaAhora.style.top = `${((minutosAhora - aperturaHora * 60) / 60) * ALTO_HORA}px`;
+                    contenido.appendChild(lineaAhora);
+                }
+            }
+
+            // CITAS
+            colocadas.forEach(({ r, inicioMin, col }) => {
+                const cita = document.createElement('div');
+                cita.className = 'dia-tl-cita ' + (r.atendido ? 'cita-atendida' : (r.tipo === 'Agendado' ? 'cita-agendada' : 'cita-walkin'));
+                const horaReal = new Date(r.fechaISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                cita.style.top = `${((inicioMin - aperturaHora * 60) / 60) * ALTO_HORA}px`;
+                cita.style.height = `${(DURACION_VISUAL_MIN / 60) * ALTO_HORA}px`;
+                cita.style.left = `${(col / numCols) * 100 + 0.5}%`;
+                cita.style.width = `${(100 / numCols) - 1}%`;
+                cita.innerHTML = `
+                    <span class="dia-tl-cita-hora">${horaReal} ${iconoEstadoPago(r.estadoPago)}</span>
+                    <strong>${escHtml(r.nombre || 'Sin Nombre')}</strong>
+                `;
+                cita.dataset.id = r.id;
+                cita.onclick = () => toggleEstadoAtendido(parseInt(cita.dataset.id, 10));
+                contenido.appendChild(cita);
             });
+
+            contenedorTl.appendChild(horasCol);
+            contenedorTl.appendChild(contenido);
+            fragmento.appendChild(contenedorTl);
+
+            calDiasElem.appendChild(fragmento);
 
             return;
         }
