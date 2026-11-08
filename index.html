@@ -413,11 +413,13 @@
             <span>👥 Base de Datos & Respaldo</span>
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="btn-update" onclick="actualizarAplicacion()">🔄 Actualizar App</button>
+                <button class="btn-horario-header" onclick="abrirModalSeguimiento()">⏰ Seguimiento</button>
                 <button class="btn-backup" onclick="descargarBaseDeDatosJSON()">💾 Descargar Copia</button>
                 <button class="btn-restore" onclick="document.getElementById('inputRestaurarBackup').click()">♻️ Restaurar Copia</button>
                 <button class="btn-export" onclick="exportarClientesCSV()">📥 Exportar CSV</button>
             </div>
         </h2>
+        <p id="contadorClientes" style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 10px;"></p>
         <div id="listaClientesDirectorio"></div>
     </div>
     </section>
@@ -512,6 +514,30 @@
     </div>
 </div>
 
+<!-- MODAL CONFIGURACIÓN DE SEGUIMIENTO A CLIENTES -->
+<div class="modal-overlay" id="modalSeguimiento">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>⏰ Recordatorios de clientes</h3>
+            <button class="modal-close" onclick="cerrarModalSeguimiento()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">
+                A partir de cuántos días sin venir se muestra el recordatorio. Los clientes que superen este límite no aparecerán en la lista de seguimiento.
+            </p>
+            <div class="form-group">
+                <label>Máximo de días sin venir (1 a 99)</label>
+                <input type="number" id="maxDiasSeguimientoInput" class="input-destacado" min="1" max="99" maxlength="2" inputmode="numeric" oninput="actualizarResumenSeguimiento()">
+            </div>
+            <p id="lblSeguimientoResumen" style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin: 8px 0 0;"></p>
+        </div>
+        <div class="btn-group">
+            <button class="btn-restore" onclick="restablecerSeguimiento()">♻️ Reiniciar</button>
+            <button class="btn-primary" onclick="guardarSeguimiento()">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let registros = JSON.parse(localStorage.getItem('barberia_registros_v4')) || [];
     let clientesBD = JSON.parse(localStorage.getItem('barberia_clientes_v4')) || [];
@@ -540,6 +566,12 @@
     let filtroEstadoPago = 'Todos'; 
     let estadoPagoSeleccionadoForm = 'Pendiente';
     let frecuenciaSeleccionadaForm = 14;
+    const MAX_DIAS_SEGUIMIENTO_DEFAULT = 60;
+    let maxDiasSeguimiento = (() => {
+        const valor = parseInt(localStorage.getItem('barberia_seguimiento_max_dias'), 10);
+        if (!isNaN(valor) && valor >= 1 && valor <= 99) return valor;
+        return MAX_DIAS_SEGUIMIENTO_DEFAULT;
+    })();
     let idRegistroFotoActual = null;
     let clienteNombreGaleriaActual = '';
 
@@ -1232,6 +1264,52 @@
         alert('Horario reiniciado a 8:00 - 20:00, aviso de cercanía cada 30 min.');
     }
 
+    function abrirModalSeguimiento() {
+        document.getElementById('maxDiasSeguimientoInput').value = String(maxDiasSeguimiento);
+        actualizarResumenSeguimiento();
+        document.getElementById('modalSeguimiento').style.display = 'flex';
+    }
+
+    function cerrarModalSeguimiento() {
+        document.getElementById('modalSeguimiento').style.display = 'none';
+    }
+
+    function actualizarResumenSeguimiento() {
+        const valor = parseInt(document.getElementById('maxDiasSeguimientoInput').value, 10);
+        const etiqueta = document.getElementById('lblSeguimientoResumen');
+        if (isNaN(valor) || valor < 1 || valor > 99) {
+            etiqueta.textContent = 'Escribe un número entre 1 y 99.';
+            return;
+        }
+        etiqueta.textContent = `Se recordarán los clientes que lleven entre su frecuencia y ${valor} días sin venir. Los de más de ${valor} días no aparecerán.`;
+    }
+
+    function guardarSeguimiento() {
+        const valor = parseInt(document.getElementById('maxDiasSeguimientoInput').value, 10);
+        if (isNaN(valor) || valor < 1 || valor > 99) {
+            alert('El límite debe ser un número entre 1 y 99.');
+            return;
+        }
+        maxDiasSeguimiento = valor;
+        try {
+            localStorage.setItem('barberia_seguimiento_max_dias', String(maxDiasSeguimiento));
+        } catch (e) {}
+        cerrarModalSeguimiento();
+        render();
+        alert('Límite de recordatorios guardado ✓');
+    }
+
+    function restablecerSeguimiento() {
+        maxDiasSeguimiento = MAX_DIAS_SEGUIMIENTO_DEFAULT;
+        document.getElementById('maxDiasSeguimientoInput').value = String(maxDiasSeguimiento);
+        try {
+            localStorage.setItem('barberia_seguimiento_max_dias', String(maxDiasSeguimiento));
+        } catch (e) {}
+        actualizarResumenSeguimiento();
+        render();
+        alert('Límite reiniciado a 60 días.');
+    }
+
 
     function filtrarClientesModal() {
         const query = document.getElementById('buscarClienteModal').value.toLowerCase().trim();
@@ -1894,6 +1972,12 @@
 
         clientesBD = clientesBD.filter(c => c && typeof c === 'object');
 
+        const totalClientes = clientesBD.filter(c => c.nombre).length;
+        const contadorClientes = document.getElementById('contadorClientes');
+        if (contadorClientes) {
+            contadorClientes.innerHTML = `<strong style="color: var(--accent);">${totalClientes}</strong> ${totalClientes === 1 ? 'cliente registrado' : 'clientes registrados'}`;
+        }
+
         if (clientesBD.length === 0) {
             listaDir.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No hay clientes guardados aún.</p>';
             renderPanelSeguimientos([]);
@@ -1940,7 +2024,7 @@
                 const diffTime = Math.abs(ahora - ultFechaObj);
                 diasSinVenir = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-                if (diasSinVenir >= freqDias) {
+                if (diasSinVenir >= freqDias && diasSinVenir <= maxDiasSeguimiento) {
                     requiereSeguimiento = true;
                     listaSeguimiento.push({ nombre: c.nombre, telefono: c.telefono || '', dias: diasSinVenir });
                 }
@@ -1953,6 +2037,8 @@
             if (diasSinVenir !== null) {
                 if (requiereSeguimiento) {
                     htmlStatusSeguimiento = `<span class="tag-alerta-seguimiento">⚠️ ¡Toca seguimiento! (${diasSinVenir} días sin venir)</span>`;
+                } else if (diasSinVenir > maxDiasSeguimiento) {
+                    htmlStatusSeguimiento = `<span class="tag" style="background:#1e293b; color:var(--text-muted);">Inactivo hace ${diasSinVenir} días</span>`;
                 } else {
                     htmlStatusSeguimiento = `<span class="tag-ok-seguimiento">✓ Al día (${diasSinVenir} días)</span>`;
                 }
@@ -2002,7 +2088,7 @@
         if (!panel) return;
 
         if (lista.length === 0) {
-            panel.innerHTML = '<div class="panel-seguimiento panel-ok">✓ Todos los clientes están al día con sus visitas</div>';
+            panel.innerHTML = `<div class="panel-seguimiento panel-ok">✓ No hay clientes para recordar (máx. ${maxDiasSeguimiento} días sin venir)</div>`;
             return;
         }
 
@@ -2017,7 +2103,7 @@
 
         panel.innerHTML = `
             <div class="panel-seguimiento">
-                <span class="panel-titulo">⏰ Clientes sin venir hace mucho (${lista.length})</span>
+                <span class="panel-titulo">⏰ Clientes sin venir (hasta ${maxDiasSeguimiento} días) (${lista.length})</span>
                 ${items}
             </div>
         `;
