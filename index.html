@@ -214,6 +214,8 @@
         /* EDITOR DE PLANTILLA DE RECIBO */
         #textoPlantillaRecibo { width: 100%; min-height: 230px; background: #0f172a; border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 0.82rem; line-height: 1.45; resize: vertical; }
 
+        #textoMensajeSeguimiento, #textoVistaPreviaSeguimiento { width: 100%; min-height: 170px; background: #0f172a; border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 0.82rem; line-height: 1.45; resize: vertical; }
+
         /* NAVEGACIÓN POR SECCIONES */
         .vista { display: none; }
         .vista.active { display: block; animation: aparecerVista 0.18s ease-out; }
@@ -530,10 +532,38 @@
                 <input type="number" id="maxDiasSeguimientoInput" class="input-destacado" min="1" max="99" maxlength="2" inputmode="numeric" oninput="actualizarResumenSeguimiento()">
             </div>
             <p id="lblSeguimientoResumen" style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin: 8px 0 0;"></p>
+            <div class="form-group">
+                <label>Mensaje de recordatorio</label>
+                <textarea id="textoMensajeSeguimiento" spellcheck="false"></textarea>
+                <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 6px;">
+                    Usa <strong>{nombre}</strong> para el nombre del cliente y <strong>{dias}</strong> para los días sin venir. Si los borras, el mensaje saldrá sin esos datos.
+                </small>
+            </div>
         </div>
         <div class="btn-group">
             <button class="btn-restore" onclick="restablecerSeguimiento()">♻️ Reiniciar</button>
             <button class="btn-primary" onclick="guardarSeguimiento()">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VISTA PREVIA DEL RECORDATORIO -->
+<div class="modal-overlay" id="modalVistaPreviaSeguimiento">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>📱 Revisar recordatorio</h3>
+            <button class="modal-close" onclick="cerrarVistaPreviaSeguimiento()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="lblVistaPreviaDestino" style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;"></p>
+            <div class="form-group">
+                <label>Mensaje para WhatsApp (puedes ajustarlo antes de enviar)</label>
+                <textarea id="textoVistaPreviaSeguimiento" spellcheck="false"></textarea>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn-restore" onclick="cerrarVistaPreviaSeguimiento()">Cancelar</button>
+            <button class="btn-primary" onclick="enviarVistaPreviaSeguimiento()">📱 Enviar por WhatsApp</button>
         </div>
     </div>
 </div>
@@ -609,6 +639,18 @@
     ].join('\n');
 
     let plantillaRecibo = localStorage.getItem('barberia_plantilla_recibo') || PLANTILLA_RECIBO_DEFAULT;
+
+    const PLANTILLA_SEGUIMIENTO_DEFAULT = [
+        '¡Hola {nombre}! 👋✂️',
+        '',
+        'Te saludamos de *LITO BARBER STUDIO*. Notamos que han pasado *{dias} días* desde tu último corte con nosotros.',
+        '',
+        '¿Te gustaría agendar tu cita para estos días y mantener tu estilo al día? 💈🔥',
+        '',
+        '¡Escríbenos y te apartamos tu turno!'
+    ].join('\n');
+
+    let plantillaSeguimiento = localStorage.getItem('barberia_seguimiento_mensaje') || PLANTILLA_SEGUIMIENTO_DEFAULT;
 
     /* RECORDATORIOS DE CITAS */
     const CLAVE_RECORDATORIOS = 'barberia_recordatorios_v1';
@@ -951,6 +993,25 @@
                     } catch (e) {}
                 }
 
+                if (typeof datos.plantillaSeguimiento === 'string' && datos.plantillaSeguimiento.trim()) {
+                    plantillaSeguimiento = datos.plantillaSeguimiento;
+                    try {
+                        if (plantillaSeguimiento === PLANTILLA_SEGUIMIENTO_DEFAULT) {
+                            localStorage.removeItem('barberia_seguimiento_mensaje');
+                        } else {
+                            localStorage.setItem('barberia_seguimiento_mensaje', plantillaSeguimiento);
+                        }
+                    } catch (e) {}
+                }
+
+                const maxDiasRestaurado = parseInt(datos.maxDiasSeguimiento, 10);
+                if (!isNaN(maxDiasRestaurado) && maxDiasRestaurado >= 1 && maxDiasRestaurado <= 99) {
+                    maxDiasSeguimiento = maxDiasRestaurado;
+                    try {
+                        localStorage.setItem('barberia_seguimiento_max_dias', String(maxDiasSeguimiento));
+                    } catch (e) {}
+                }
+
                 guardar();
                 alert('✅ Base de datos restaurada correctamente.');
             } catch (err) {
@@ -1075,6 +1136,8 @@
             fechaRespaldo: new Date().toISOString(),
             barberia: "Lito Barber Studio",
             plantillaRecibo: plantillaRecibo,
+            plantillaSeguimiento: plantillaSeguimiento,
+            maxDiasSeguimiento: maxDiasSeguimiento,
             clientes: clientesBD,
             registros: registros
         };
@@ -1266,6 +1329,7 @@
 
     function abrirModalSeguimiento() {
         document.getElementById('maxDiasSeguimientoInput').value = String(maxDiasSeguimiento);
+        document.getElementById('textoMensajeSeguimiento').value = plantillaSeguimiento;
         actualizarResumenSeguimiento();
         document.getElementById('modalSeguimiento').style.display = 'flex';
     }
@@ -1291,23 +1355,32 @@
             return;
         }
         maxDiasSeguimiento = valor;
+        plantillaSeguimiento = document.getElementById('textoMensajeSeguimiento').value.trim() || PLANTILLA_SEGUIMIENTO_DEFAULT;
         try {
             localStorage.setItem('barberia_seguimiento_max_dias', String(maxDiasSeguimiento));
+            if (plantillaSeguimiento === PLANTILLA_SEGUIMIENTO_DEFAULT) {
+                localStorage.removeItem('barberia_seguimiento_mensaje');
+            } else {
+                localStorage.setItem('barberia_seguimiento_mensaje', plantillaSeguimiento);
+            }
         } catch (e) {}
         cerrarModalSeguimiento();
         render();
-        alert('Límite de recordatorios guardado ✓');
+        alert('Límite y mensaje de recordatorio guardados ✓');
     }
 
     function restablecerSeguimiento() {
+        if (!confirm('¿Volver al límite de 60 días y al mensaje original? Se perderán tus cambios no guardados.')) return;
         maxDiasSeguimiento = MAX_DIAS_SEGUIMIENTO_DEFAULT;
+        plantillaSeguimiento = PLANTILLA_SEGUIMIENTO_DEFAULT;
         document.getElementById('maxDiasSeguimientoInput').value = String(maxDiasSeguimiento);
+        document.getElementById('textoMensajeSeguimiento').value = plantillaSeguimiento;
         try {
             localStorage.setItem('barberia_seguimiento_max_dias', String(maxDiasSeguimiento));
+            localStorage.removeItem('barberia_seguimiento_mensaje');
         } catch (e) {}
         actualizarResumenSeguimiento();
         render();
-        alert('Límite reiniciado a 60 días.');
     }
 
 
@@ -1598,13 +1671,36 @@
         window.open(url, '_blank');
     }
 
-    function enviarSeguimientoWhatsApp(nombreCliente, telefonoCliente, diasSinVenir) {
-        let texto = `¡Hola ${nombreCliente}! 👋✂️\n\n`;
-        texto += `Te saludamos de *LITO BARBER STUDIO*. Notamos que han pasado *${diasSinVenir} días* desde tu último corte con nosotros.\n\n`;
-        texto += `¿Te gustaría agendar tu cita para estos días y mantener tu estilo al día? 💈🔥\n\n`;
-        texto += `¡Escríbenos y te apartamos tu turno!`;
+    function construirMensajeSeguimiento(nombreCliente, diasSinVenir) {
+        const nombre = nombreCliente || 'cliente';
+        const dias = (diasSinVenir === null || diasSinVenir === undefined || isNaN(diasSinVenir)) ? '' : String(diasSinVenir);
+        return plantillaSeguimiento.split('{nombre}').join(nombre).split('{dias}').join(dias);
+    }
 
-        abrirWhatsAppMensaje(telefonoCliente, texto, nombreCliente);
+    function enviarSeguimientoWhatsApp(nombreCliente, telefonoCliente, diasSinVenir) {
+        document.getElementById('textoVistaPreviaSeguimiento').value = construirMensajeSeguimiento(nombreCliente, diasSinVenir);
+        document.getElementById('lblVistaPreviaDestino').textContent = telefonoCliente ? `Para: ${nombreCliente} — ${telefonoCliente}` : `Para: ${nombreCliente}`;
+        const modal = document.getElementById('modalVistaPreviaSeguimiento');
+        modal.dataset.nombre = nombreCliente || '';
+        modal.dataset.telefono = telefonoCliente || '';
+        modal.style.display = 'flex';
+    }
+
+    function cerrarVistaPreviaSeguimiento() {
+        document.getElementById('modalVistaPreviaSeguimiento').style.display = 'none';
+    }
+
+    function enviarVistaPreviaSeguimiento() {
+        const modal = document.getElementById('modalVistaPreviaSeguimiento');
+        const texto = document.getElementById('textoVistaPreviaSeguimiento').value.trim();
+        if (!texto) {
+            alert('El mensaje está vacío.');
+            return;
+        }
+        const nombre = modal.dataset.nombre || '';
+        const telefono = modal.dataset.telefono || '';
+        cerrarVistaPreviaSeguimiento();
+        abrirWhatsAppMensaje(telefono, texto, nombre);
     }
 
     function enviarReciboWhatsApp(id) {
